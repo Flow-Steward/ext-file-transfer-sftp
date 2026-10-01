@@ -1,0 +1,42 @@
+# Every push and pull request runs the extension's tests and builds the archive
+# the catalog would publish. The Release workflow runs this same workflow.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test dependencies
+        # The host provides flowsteward-extension-sdk at runtime; tests use the
+        # wheel committed in dev-wheels/ until the SDK is published.
+        run: |
+          pip install pytest==8.3.5 PyYAML==6.0.3
+          if ls dev-wheels/flowsteward_extension_sdk-*.whl >/dev/null 2>&1; then pip install dev-wheels/flowsteward_extension_sdk-*.whl; fi
+          # The extension's own runtime dependencies (python_requirements):
+          # written by new_extension_repo.py, kept by the author.
+          if [ -f .github/requirements-test.txt ]; then pip install -r .github/requirements-test.txt; fi
+      - name: Extension tests
+        run: |
+          if [ -d tests ]; then python -m pytest -q -p no:cacheprovider tests; else echo "no tests/"; fi
+      - name: Package the archive
+        run: python .github/scripts/package_extension.py
+      - name: The catalog would accept it
+        run: python .github/scripts/catalog_check.py dist/*.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*.zip
+          if-no-files-found: error

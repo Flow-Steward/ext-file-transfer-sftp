@@ -1,0 +1,8 @@
+# Installed by CI for the tests; the runtime installs python_requirements itself.
+bcrypt==5.0.0
+cffi==2.1.0
+cryptography==49.0.0
+invoke==3.0.3
+paramiko==5.0.0
+pycparser==3.0
+pynacl==1.6.2

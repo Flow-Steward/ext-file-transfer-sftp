@@ -1,0 +1,61 @@
+forms:
+  - operation_id: list_files
+    title: List remote files
+    fields:
+      - name: path
+        widget_type: text
+        label: Directory
+        help_text: Directory relative to the connection root. Use "." for the root itself.
+        required: true
+      - name: name_glob
+        widget_type: text
+        label: Filename glob
+      - name: limit
+        widget_type: number
+        label: Limit
+  - operation_id: fetch_file
+    title: Fetch remote file
+    fields:
+      - name: path
+        widget_type: text
+        label: Path or directory
+        help_text: >-
+          Without a filename glob this is the file to fetch. With a glob it is the
+          directory to search; use "." for the connection root.
+        required: true
+      - name: name_glob
+        widget_type: text
+        label: Filename glob
+        help_text: >-
+          Optional. When set, Path is treated as a directory and the glob selects
+          the file inside it.
+      - name: select
+        widget_type: select
+        label: Selection
+        options:
+          - label: Only match
+            value: only
+          - label: Latest modified
+            value: latest_modified
+          - label: Latest name
+            value: latest_name
+      - name: max_bytes
+        widget_type: number
+        label: Max bytes
+  - operation_id: upload_file
+    title: Upload artifact
+    fields:
+      - name: artifact_handle
+        widget_type: artifact_picker
+        label: Artifact
+        required: true
+      - name: remote_path
+        widget_type: text
+        label: Remote path
+        required: true
+      - name: overwrite
+        widget_type: boolean
+        label: Overwrite
+      - name: max_bytes
+        widget_type: number
+        label: Max bytes

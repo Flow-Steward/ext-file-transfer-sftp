@@ -1,0 +1,6 @@
+component_id: overview
+type: markdown
+component_type: markdown
+title: File Transfer
+content: |
+  FTP/FTPS/SFTP transfer operations are exposed to workflows through connector steps.

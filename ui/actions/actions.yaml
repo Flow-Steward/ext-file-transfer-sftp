@@ -1,0 +1,197 @@
+actions:
+  - action_id: discover_host_key
+    title: Discover SFTP Host Key
+    description: Fetch the SFTP server host-key fingerprint before saving a connection.
+    required_scopes:
+      - extension:invoke
+    handler:
+      mode: extension
+    mutates_platform: false
+    workflow_visible: false
+    parameters:
+      - name: connection_ref
+        type: connection_ref
+        required: true
+    result_fields:
+      - host_key_fingerprint
+      - host_key_type
+    error_codes:
+      - invalid_connection
+      - dependency_unavailable
+      - unsupported_host_key
+      - network_blocked
+      - transfer_failed
+  - action_id: test_connection
+    title: Test File Transfer Connection
+    description: Validate that the selected FTP/FTPS/SFTP connection can be reached and rooted safely.
+    required_scopes:
+      - extension:invoke
+    handler:
+      mode: extension
+    mutates_platform: false
+    workflow_visible: false
+    parameters:
+      - name: connection_ref
+        type: connection_ref
+        required: true
+    result_fields:
+      - ok
+      - protocol
+    error_codes:
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - insecure_ftp_not_acknowledged
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - network_blocked
+      - invalid_passive_port
+      - metadata_unknown
+      - transfer_failed
+  - action_id: list_files
+    title: List Files
+    description: List bounded FTP/FTPS/SFTP directory entries without downloading file bodies.
+    required_scopes:
+      - extension:invoke
+    handler:
+      mode: extension
+    mutates_platform: false
+    workflow_visible: true
+    parameters:
+      - name: connection_ref
+        type: connection_ref
+        required: true
+      - name: path
+        type: string
+        required: true
+      - name: name_glob
+        type: string
+        required: false
+      - name: limit
+        type: integer
+        required: false
+    result_fields:
+      - files
+      - truncated
+    error_codes:
+      - invalid_payload
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - invalid_path
+      - directory_too_large
+      - network_blocked
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - invalid_passive_port
+      - metadata_unknown
+      - transfer_failed
+  - action_id: fetch_file
+    title: Fetch File
+    description: Stream one selected FTP/FTPS/SFTP file into a host-created artifact.
+    required_scopes:
+      - extension:invoke
+      - artifact:read
+    handler:
+      mode: extension
+    mutates_platform: false
+    workflow_visible: true
+    parameters:
+      - name: connection_ref
+        type: connection_ref
+        required: true
+      - name: path
+        type: string
+        required: true
+      - name: name_glob
+        type: string
+        required: false
+      - name: select
+        type: string
+        required: false
+      - name: max_bytes
+        type: integer
+        required: false
+    result_fields:
+      - artifact_handle
+      - artifact_filename
+      - source_filename
+      - remote_path
+      - sha256
+      - size_bytes
+    error_codes:
+      - invalid_payload
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - invalid_path
+      - not_found
+      - ambiguous_match
+      - directory_too_large
+      - not_supported_by_server
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - network_blocked
+      - invalid_passive_port
+      - metadata_unknown
+      - max_bytes_exceeded
+      - artifact_write_failed
+      - transfer_failed
+  - action_id: upload_file
+    title: Upload File
+    description: Stream one host artifact to an FTP/FTPS/SFTP path through a temporary same-directory object.
+    required_scopes:
+      - extension:invoke
+      - artifact:read
+    handler:
+      mode: extension
+    mutates_platform: false
+    workflow_visible: true
+    parameters:
+      - name: artifact_handle
+        type: artifact_handle
+        required: true
+      - name: connection_ref
+        type: connection_ref
+        required: true
+      - name: remote_path
+        type: string
+        required: true
+      - name: overwrite
+        type: boolean
+        required: false
+      - name: max_bytes
+        type: integer
+        required: false
+    result_fields:
+      - uploaded
+      - remote_path
+      - sha256
+      - size_bytes
+      - overwrite_protection
+      - external_effect_status
+    error_codes:
+      - invalid_payload
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - invalid_path
+      - already_exists
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - network_blocked
+      - invalid_passive_port
+      - metadata_unknown
+      - not_supported_by_server
+      - max_bytes_exceeded
+      - artifact_read_failed
+      - transfer_failed
+      - timeout_unknown

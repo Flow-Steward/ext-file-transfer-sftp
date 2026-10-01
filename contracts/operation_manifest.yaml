@@ -1,0 +1,221 @@
+operations:
+  - operation_id: discover_host_key
+    workflow_visible: false
+    display_name: Discover SFTP Host Key
+    description: Fetch the SFTP server host-key fingerprint before saving a connection.
+    operation_kind: action
+    category: file_transfer
+    inputs:
+      - name: connection_ref
+        value_type: connection_ref
+        required: true
+    outputs:
+      - name: host_key_fingerprint
+        value_type: text
+      - name: host_key_type
+        value_type: text
+    result_fields:
+      - result.host_key_fingerprint
+      - result.host_key_type
+    error_codes:
+      - invalid_connection
+      - dependency_unavailable
+      - unsupported_host_key
+      - network_blocked
+      - transfer_failed
+  - operation_id: test_connection
+    workflow_visible: false
+    display_name: Test Connection
+    description: Validate that the selected FTP/FTPS/SFTP connection is reachable and rooted safely.
+    operation_kind: action
+    category: file_transfer
+    inputs:
+      - name: connection_ref
+        value_type: connection_ref
+        required: true
+    outputs:
+      - name: protocol
+        value_type: text
+      - name: use_tls
+        value_type: boolean
+    result_fields:
+      - result.protocol
+      - result.use_tls
+    error_codes:
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - insecure_ftp_not_acknowledged
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - network_blocked
+      - invalid_passive_port
+      - metadata_unknown
+      - transfer_failed
+  - operation_id: list_files
+    connection_type_ids:
+      - ftp
+      - sftp
+    display_name: List Files
+    description: List bounded FTP/FTPS/SFTP directory entries without reading file bodies.
+    operation_kind: source
+    category: file_transfer
+    inputs:
+      - name: connection_ref
+        value_type: connection_ref
+        required: true
+      - name: path
+        value_type: text
+        required: true
+      - name: name_glob
+        value_type: text
+        required: false
+      - name: limit
+        value_type: integer
+        required: false
+    outputs:
+      - name: files
+        value_type: array
+      - name: truncated
+        value_type: boolean
+    result_fields:
+      - result.files[].name
+      - result.truncated
+    error_codes:
+      - invalid_payload
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - invalid_path
+      - directory_too_large
+      - network_blocked
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - invalid_passive_port
+      - metadata_unknown
+      - transfer_failed
+  - operation_id: fetch_file
+    connection_type_ids:
+      - ftp
+      - sftp
+    display_name: Fetch File
+    description: Stream one selected remote file into a host-created artifact named download.bin.
+    operation_kind: source
+    category: file_transfer
+    inputs:
+      - name: connection_ref
+        value_type: connection_ref
+        required: true
+      - name: path
+        value_type: text
+        required: true
+      - name: name_glob
+        value_type: text
+        required: false
+      - name: select
+        value_type: text
+        required: false
+      - name: max_bytes
+        value_type: integer
+        required: false
+    outputs:
+      - name: artifact_handle
+        value_type: artifact_handle
+      - name: artifact_filename
+        value_type: text
+      - name: source_filename
+        value_type: text
+      - name: remote_path
+        value_type: text
+      - name: sha256
+        value_type: text
+      - name: size_bytes
+        value_type: integer
+    result_fields:
+      - result.artifact_handle
+      - result.source_filename
+      - result.size_bytes
+      - result.sha256
+    error_codes:
+      - invalid_payload
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - invalid_path
+      - not_found
+      - ambiguous_match
+      - directory_too_large
+      - not_supported_by_server
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - network_blocked
+      - invalid_passive_port
+      - metadata_unknown
+      - max_bytes_exceeded
+      - artifact_write_failed
+      - transfer_failed
+  - operation_id: upload_file
+    connection_type_ids:
+      - ftp
+      - sftp
+    display_name: Upload File
+    description: Stream one host artifact to a remote FTP/FTPS/SFTP path through a temporary same-directory object.
+    operation_kind: action
+    category: file_transfer
+    inputs:
+      - name: artifact_handle
+        value_type: artifact_handle
+        required: true
+      - name: connection_ref
+        value_type: connection_ref
+        required: true
+      - name: remote_path
+        value_type: text
+        required: true
+      - name: overwrite
+        value_type: boolean
+        required: false
+      - name: max_bytes
+        value_type: integer
+        required: false
+    outputs:
+      - name: uploaded
+        value_type: boolean
+      - name: remote_path
+        value_type: text
+      - name: sha256
+        value_type: text
+      - name: size_bytes
+        value_type: integer
+      - name: overwrite_protection
+        value_type: text
+    result_fields:
+      - result.uploaded
+      - result.remote_path
+      - result.size_bytes
+      - result.external_effect_status
+    error_codes:
+      - invalid_payload
+      - invalid_connection
+      - dependency_unavailable
+      - authentication_failed
+      - invalid_private_key
+      - invalid_path
+      - already_exists
+      - invalid_host_key_fingerprint
+      - host_key_mismatch
+      - unsupported_host_key
+      - network_blocked
+      - invalid_passive_port
+      - metadata_unknown
+      - not_supported_by_server
+      - max_bytes_exceeded
+      - artifact_read_failed
+      - transfer_failed
+      - timeout_unknown

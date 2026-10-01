@@ -1,0 +1,19 @@
+policies:
+  - operation_id: fetch_file
+    outputs:
+      - kind: artifact
+        binding_key: fetched_file
+        filename: download.bin
+        content_type: application/octet-stream
+        max_size_bytes: 209715200
+        max_size_env: FS_EXTENSION_ARTIFACT_MAX_BYTES
+        retention_class: run_window
+  - operation_id: upload_file
+    inputs:
+      - kind: artifact
+        value_type: artifact_handle
+        binding_key: source_artifact
+        field: artifact_handle
+        required: true
+        max_size_bytes: 209715200
+        max_size_env: FS_EXTENSION_ARTIFACT_MAX_BYTES

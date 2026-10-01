@@ -1,0 +1,145 @@
+manifest_version: 2
+lifecycle: {data_schema_version: 1, data_migrations: []}
+extension_id: flowsteward.file-transfer
+kind: tool_provider
+version: 0.1.6
+display_name: File Transfer
+description: Streams opaque files over FTP, explicit FTPS, and SFTP using Flow Steward
+  artifact grants.
+vendor:
+  name: Flow Steward
+  support_url: https://github.com/Flow-Steward/ext-file-transfer-sftp/issues
+  website_url: https://github.com/Flow-Steward/ext-file-transfer-sftp
+listing:
+  category: data
+  tags:
+  - file-transfer
+  - ftp
+  - ftps
+  - sftp
+  summary: Move files over FTP, FTPS, and SFTP using Flow Steward artifact grants.
+features:
+- tool
+- action
+supported_url_schemes:
+- ftp
+- ftps
+- sftp
+required_scopes:
+- extension:invoke
+- artifact:read
+machine_auth:
+  service_account_key: svc_ext_file_transfer
+  required_scopes:
+  - extension:invoke
+  - artifact:read
+schemas:
+  config: schemas/config.schema.yaml
+  secrets: schemas/secrets.schema.yaml
+  subscriptions: schemas/subscriptions.schema.yaml
+  input:
+    type: object
+    properties:
+      action:
+        type: string
+      request:
+        type: object
+    required:
+    - action
+  output:
+    type: object
+    properties:
+      ok:
+        type: boolean
+      result:
+        type: object
+      error_code:
+        type: string
+    required:
+    - ok
+account_scope:
+  scope_type: project
+  description: FTP/FTPS/SFTP connections are project-scoped and keep secret values
+    in encrypted connection secrets.
+external_effects:
+- operation_id: upload_file
+  effect_kind: file_delivery
+  channel: file_transfer
+  idempotency: required
+  test_mode_behavior: suppress
+runtime:
+  extension_contract_v2:
+    connection_types: contracts/connection_types.yaml
+    operation_manifest: contracts/operation_manifest.yaml
+    artifact_policies: contracts/artifact_policies.yaml
+    step_ui_manifest: contracts/step_ui_manifest.yaml
+artifact_policies:
+- operation_id: fetch_file
+  outputs:
+  - kind: artifact
+    binding_key: fetched_file
+    filename: download.bin
+    content_type: application/octet-stream
+    max_size_bytes: 209715200
+    max_size_env: FS_EXTENSION_ARTIFACT_MAX_BYTES
+    retention_class: run_window
+- operation_id: upload_file
+  inputs:
+  - kind: artifact
+    value_type: artifact_handle
+    binding_key: source_artifact
+    field: artifact_handle
+    required: true
+    max_size_bytes: 209715200
+    max_size_env: FS_EXTENSION_ARTIFACT_MAX_BYTES
+entrypoint:
+  mode: subprocess
+  command:
+  - python3
+  - main.py
+  timeout_policy:
+    env: FS_EXTENSION_OPERATION_TIMEOUT_SECONDS
+    default_seconds: 300
+    minimum_seconds: 30
+    maximum_seconds: 3600
+    headroom_seconds: 30
+health:
+  command:
+  - python3
+  - health.py
+  timeout_seconds: 5
+ui_manifest: ui/ui_manifest.yaml
+action_manifest: ui/actions/actions.yaml
+python_requirements:
+- name: bcrypt
+  version: 5.0.0
+  hashes:
+  - sha256:7aeef54b60ceddb6f30ee3db090351ecf0d40ec6e2abf41430997407a46d2254
+  - sha256:ddb4e1500f6efdd402218ffe34d040a1196c072e07929b9820f363a1fd1f4191
+- name: cffi
+  version: 2.1.0
+  hashes:
+  - sha256:1e9f50d192a3e525b15a75ab5114e442d83d657b7ec29182a991bc9a88fd3a66
+  - sha256:b6422532152adf4e59b110cb2808cee7a033800952f5c036b4af047ee43199e7
+- name: cryptography
+  version: 49.0.0
+  hashes:
+  - sha256:0e959b578856a3924bc0cbb710fc12c387b9412a951389f3ca61704a9e25f325
+  - sha256:36d1709f992593689b45bda411498d62c6e365f2ca00b84657d4dadd24de16db
+- name: invoke
+  version: 3.0.3
+  hashes:
+  - sha256:f11327165e5cbb89b2ad1d88d3292b5113332c43b8553b494da435d6ec6f5053
+- name: paramiko
+  version: 5.0.0
+  hashes:
+  - sha256:b7044611c30140d9a75261653210e2002977b71a0497ff3ba0d98d7edbf62f7c
+- name: pycparser
+  version: '3.0'
+  hashes:
+  - sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
+- name: pynacl
+  version: 1.6.2
+  hashes:
+  - sha256:22de65bb9010a725b0dac248f353bb072969c94fa8d6b1f34b87d7953cf7bbe4
+  - sha256:8845c0631c0be43abdd865511c41eab235e0be69c81dc66a50911594198679b0

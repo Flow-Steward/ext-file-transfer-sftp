@@ -1,0 +1,141 @@
+connection_types:
+  - connection_type_id: ftp
+    display_name: FTP / FTPS
+    description: Project-scoped FTP or explicit FTPS account rooted at a server-side jailed directory.
+    config_schema:
+      type: object
+      additionalProperties: false
+      required: [host]
+      properties:
+        host:
+          type: string
+          minLength: 1
+          title: Host
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          default: 21
+          title: Port
+        root_path:
+          type: string
+          default: "."
+          title: Root path
+        use_tls:
+          type: boolean
+          default: true
+          title: Use explicit FTPS
+        allow_insecure_ftp:
+          type: boolean
+          default: false
+          title: Acknowledge plaintext FTP
+        connect_timeout_seconds:
+          type: number
+          minimum: 1
+          maximum: 60
+          default: 15
+          title: Connect timeout
+        read_timeout_seconds:
+          type: number
+          minimum: 1
+          maximum: 300
+          default: 30
+          title: Read timeout
+    secret_schema:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: Username
+        password:
+          type: string
+          minLength: 1
+          title: Password
+    capabilities:
+      test_connection: true
+      list_files: true
+      fetch_file: true
+      upload_file: true
+    safety_profile:
+      protocol: ftp
+      requires_pinned_peer: true
+      plaintext_requires_acknowledgement: true
+      requires_server_side_jail: true
+  - connection_type_id: sftp
+    display_name: SFTP
+    description: Project-scoped SFTP account with pinned OpenSSH SHA-256 host-key fingerprint.
+    config_schema:
+      type: object
+      additionalProperties: false
+      required: [host, host_key_fingerprint]
+      properties:
+        host:
+          type: string
+          minLength: 1
+          title: Host
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          default: 22
+          title: Port
+        root_path:
+          type: string
+          default: "."
+          title: Root path
+        host_key_fingerprint:
+          type: string
+          pattern: "^SHA256:[A-Za-z0-9+/]+$"
+          title: Host key fingerprint
+        connect_timeout_seconds:
+          type: number
+          minimum: 1
+          maximum: 60
+          default: 15
+          title: Connect timeout
+        read_timeout_seconds:
+          type: number
+          minimum: 1
+          maximum: 300
+          default: 30
+          title: Read timeout
+    secret_schema:
+      type: object
+      additionalProperties: false
+      required: [username]
+      oneOf:
+        - required: [password]
+          not:
+            anyOf:
+              - required: [private_key]
+              - required: [private_key_passphrase]
+        - required: [private_key]
+          not:
+            required: [password]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: Username
+        password:
+          type: string
+          title: Password
+        private_key:
+          type: string
+          title: Private key
+        private_key_passphrase:
+          type: string
+          title: Private key passphrase
+    capabilities:
+      test_connection: true
+      list_files: true
+      fetch_file: true
+      upload_file: true
+    safety_profile:
+      protocol: sftp
+      requires_pinned_peer: true
+      requires_host_key_fingerprint: true
+      disables_agent_and_local_key_discovery: true

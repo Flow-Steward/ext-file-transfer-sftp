@@ -1,0 +1,188 @@
+component_id: file_transfer_connection
+type: connection_form
+title: File transfer connection
+description: Choose FTP/FTPS or SFTP, then store project-scoped connection settings and credentials. For SFTP, the server identity is fetched automatically when you save.
+data:
+  connection_kind: extension
+  connection_type_field: protocol
+  default_connection_type: sftp
+  test_action: test_connection
+  pre_save_actions:
+    - action_id: discover_host_key
+      status: Fetching server identity...
+      run_when:
+        - path: protocol
+          eq: sftp
+        - path: host_key_fingerprint
+          eq: ""
+      target_connection:
+        connection_type: sftp
+        config_fields:
+          - host
+          - port
+          - connect_timeout_seconds
+          - read_timeout_seconds
+      values_fields:
+        - host
+        - port
+      data:
+        connection_type: sftp
+      result_mapping:
+        host_key_fingerprint: result.host_key_fingerprint
+      confirmation:
+        required_result_fields:
+          - host_key_fingerprint
+        reject_error: Server identity was not trusted; connection was not saved.
+        message: |
+          Flow Steward found this server identity:
+
+          Host: {{config.host}}:{{config.port}}
+          Key type: {{result.host_key_type}}
+          Fingerprint: {{result.host_key_fingerprint}}
+
+          Continue only if this is the server you expected. Trust this server and save the connection?
+  connection_types:
+    sftp:
+      connection_type: sftp
+      provider: sftp
+      config_fields:
+        - host
+        - port
+        - root_path
+        - host_key_fingerprint
+        - connect_timeout_seconds
+        - read_timeout_seconds
+      secret_fields:
+        - username
+        - password
+        - private_key
+        - private_key_passphrase
+      required_secret_fields:
+        - username
+      tags:
+        - file-transfer
+        - sftp
+      defaults:
+        display_name: SFTP
+        port: 22
+        root_path: "."
+        connect_timeout_seconds: 15
+        read_timeout_seconds: 30
+    ftp:
+      connection_type: ftp
+      provider: ftp
+      config_fields:
+        - host
+        - port
+        - root_path
+        - use_tls
+        - allow_insecure_ftp
+        - connect_timeout_seconds
+        - read_timeout_seconds
+      secret_fields:
+        - username
+        - password
+      required_secret_fields:
+        - username
+        - password
+      tags:
+        - file-transfer
+        - ftp
+      defaults:
+        display_name: FTP / FTPS
+        port: 21
+        root_path: "."
+        use_tls: true
+        allow_insecure_ftp: false
+        connect_timeout_seconds: 15
+        read_timeout_seconds: 30
+defaults:
+  protocol: sftp
+  display_name: SFTP
+  port: 22
+  root_path: "."
+  connect_timeout_seconds: 15
+  read_timeout_seconds: 30
+fields:
+  - path: protocol
+    label: Protocol
+    widget: select
+    required: true
+    options:
+      - value: sftp
+        label: SFTP
+      - value: ftp
+        label: FTP / FTPS
+  - path: display_name
+    label: Display name
+    widget: text
+  - path: environment
+    label: Environment
+    widget: text
+  - path: host
+    label: Server
+    widget: text
+    required: true
+  - path: port
+    label: Port
+    widget: integer
+    required: true
+    minimum: 1
+    maximum: 65535
+    step: 1
+  - path: root_path
+    label: Remote folder
+    widget: text
+    required: true
+  - path: use_tls
+    label: Use explicit FTPS
+    widget: boolean
+    visible_if:
+      - path: protocol
+        eq: ftp
+  - path: allow_insecure_ftp
+    label: Acknowledge plaintext FTP
+    widget: boolean
+    help: Only enable this when the server does not support FTPS and the deployment explicitly accepts plaintext FTP.
+    visible_if:
+      - path: protocol
+        eq: ftp
+  - path: connect_timeout_seconds
+    label: Connect timeout seconds
+    widget: integer
+    minimum: 1
+    maximum: 60
+    step: 1
+  - path: read_timeout_seconds
+    label: Read timeout seconds
+    widget: integer
+    minimum: 1
+    maximum: 300
+    step: 1
+  - path: username
+    label: Username
+    widget: secret
+    required: true
+  - path: password
+    label: Password
+    widget: secret
+    visible_if:
+      - path: protocol
+        in:
+          - ftp
+          - sftp
+  - path: private_key
+    label: Private key
+    widget: textarea
+    secret: true
+    props:
+      rows: 8
+    visible_if:
+      - path: protocol
+        eq: sftp
+  - path: private_key_passphrase
+    label: Private key passphrase
+    widget: secret
+    visible_if:
+      - path: protocol
+        eq: sftp
