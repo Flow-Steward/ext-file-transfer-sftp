@@ -13,8 +13,9 @@ import posixpath
 import socket
 import ssl
 import stat
+import time
 import uuid
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -31,6 +32,16 @@ from flowsteward_extension_sdk import (
     stream_artifact_bytes,
     write_artifact_stream,
 )
+
+try:
+    from flowsteward_extension_sdk import report_progress
+except ImportError:  # a Core with an SDK older than 0.3.0 shows no progress
+
+    def report_progress(
+        message: str = "", *, done: int | None = None, total: int | None = None
+    ) -> None:
+        return None
+
 
 _MESSAGE_SFTP_FINGERPRINT_IS_MALFORMED = "SFTP fingerprint is malformed"
 _MESSAGE_REMOTE_PATH_ALREADY_EXISTS = "Remote path already exists"
@@ -1572,8 +1583,49 @@ def _select_entry(entries: list[RemoteEntry], *, selector: str, protocol: str) -
     )
 
 
+PROGRESS_MIN_INTERVAL_SECONDS = 1.0
+_MEGABYTE = 1024 * 1024
+
+
+def _transfer_progress(
+    verb: str,
+    name: str,
+    *,
+    total_bytes: int | None,
+    clock: Callable[[], float] = time.monotonic,
+) -> Callable[[int, bool], None]:
+    """Report a transfer in whole megabytes, at most once a second and always at the end.
+
+    With a known size the step shows "N of M" megabytes; without one, how much has moved.
+    """
+    total_mb = math.ceil(total_bytes / _MEGABYTE) if total_bytes else None
+    last = {"mb": 0, "at": float("-inf")}
+
+    def report(size_bytes: int, finished: bool) -> None:
+        done_mb = size_bytes // _MEGABYTE
+        if finished and total_mb:
+            done_mb = total_mb
+        now = clock()
+        if not finished and (
+            done_mb <= last["mb"] or now - last["at"] < PROGRESS_MIN_INTERVAL_SECONDS
+        ):
+            return
+        if finished and done_mb == 0:
+            return  # under a megabyte: nothing worth a progress line
+        last["mb"], last["at"] = done_mb, now
+        if total_mb:
+            report_progress(f"{verb} {name} (MB)", done=done_mb, total=total_mb)
+        else:
+            report_progress(f"{verb} {name}: {done_mb} MB so far", done=done_mb)
+
+    return report
+
+
 def _hashing_chunks(
-    chunks: Iterable[bytes], *, max_bytes: int
+    chunks: Iterable[bytes],
+    *,
+    max_bytes: int,
+    progress: Callable[[int, bool], None] | None = None,
 ) -> tuple[Iterator[bytes], dict[str, Any]]:
     state: dict[str, Any] = {"size_bytes": 0, "sha256": hashlib.sha256()}
 
@@ -1584,7 +1636,11 @@ def _hashing_chunks(
             if state["size_bytes"] > max_bytes:
                 raise FileTransferError("max_bytes_exceeded", "Transfer exceeded max_bytes")
             state["sha256"].update(data)
+            if progress is not None:
+                progress(state["size_bytes"], False)
             yield data
+        if progress is not None:
+            progress(state["size_bytes"], True)
 
     return _iter(), state
 
@@ -1669,7 +1725,11 @@ def _handle_fetch_file(payload: dict[str, Any], config: ConnectionConfig) -> dic
             metadata_size = selected.size_bytes
         if metadata_size is not None and metadata_size > max_bytes:
             raise FileTransferError("max_bytes_exceeded", "Remote file exceeds max_bytes")
-        chunks, state = _hashing_chunks(client.stream_file(remote_path), max_bytes=max_bytes)
+        chunks, state = _hashing_chunks(
+            client.stream_file(remote_path),
+            max_bytes=max_bytes,
+            progress=_transfer_progress("Downloading", selected.name, total_bytes=metadata_size),
+        )
         try:
             write_result = write_artifact_stream(
                 payload,
@@ -1766,7 +1826,11 @@ def _handle_upload_file(payload: dict[str, Any], config: ConnectionConfig) -> di
         )
     except ArtifactAccessError as exc:
         raise FileTransferError("artifact_read_failed", str(exc)) from exc
-    chunks, state = _hashing_chunks(artifact_stream, max_bytes=max_bytes)
+    chunks, state = _hashing_chunks(
+        artifact_stream,
+        max_bytes=max_bytes,
+        progress=_transfer_progress("Uploading", _basename(remote_path), total_bytes=artifact_size),
+    )
     try:
         with _client_for(config) as client:
             result = client.upload_file(remote_path, chunks, overwrite=overwrite)

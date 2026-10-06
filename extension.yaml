@@ -2,7 +2,7 @@ manifest_version: 2
 lifecycle: {data_schema_version: 1, data_migrations: []}
 extension_id: flowsteward.file-transfer
 kind: tool_provider
-version: 0.1.6
+version: 0.1.7
 display_name: File Transfer
 description: Streams opaque files over FTP, explicit FTPS, and SFTP using Flow Steward
   artifact grants.

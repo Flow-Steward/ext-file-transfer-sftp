@@ -2305,3 +2305,70 @@ def test_traversal_protection_is_unchanged(monkeypatch, path):
         response = ft.handle_payload(_payload(operation, {"path": path, **extra}))
         assert response["ok"] is False, (operation, path)
         assert response["error_code"] == "invalid_path"
+
+
+def test_transfer_progress_counts_whole_megabytes_against_a_known_size(monkeypatch):
+    reported: list[tuple[str, int | None, int | None]] = []
+    monkeypatch.setattr(
+        ft,
+        "report_progress",
+        lambda message="", *, done=None, total=None: reported.append((message, done, total)),
+    )
+    ticks = iter([0.0, 0.2, 2.0, 2.1, 4.0])
+    report = ft._transfer_progress(
+        "Downloading", "big.zip", total_bytes=3 * 1024 * 1024 + 5, clock=lambda: next(ticks)
+    )
+    mb = 1024 * 1024
+
+    report(mb, False)  # first megabyte
+    report(mb + 10, False)  # same megabyte: nothing
+    report(2 * mb, False)  # next megabyte
+    report(2 * mb + 1, False)  # same megabyte again
+    report(3 * mb + 5, True)  # done: always the full size
+
+    assert reported == [
+        ("Downloading big.zip (MB)", 1, 4),
+        ("Downloading big.zip (MB)", 2, 4),
+        ("Downloading big.zip (MB)", 4, 4),
+    ]
+
+
+def test_transfer_progress_without_a_size_says_how_much_has_moved(monkeypatch):
+    reported: list[tuple[str, int | None]] = []
+    monkeypatch.setattr(
+        ft,
+        "report_progress",
+        lambda message="", *, done=None, total=None: reported.append((message, done)),
+    )
+    ticks = iter([0.0, 5.0])
+    report = ft._transfer_progress(
+        "Uploading", "out.csv", total_bytes=None, clock=lambda: next(ticks)
+    )
+
+    report(2 * 1024 * 1024, False)
+    report(100, True)  # a tiny file at the end reports nothing
+
+    assert reported == [("Uploading out.csv: 2 MB so far", 2)]
+
+
+def test_upload_reports_its_progress(monkeypatch):
+    reported: list[tuple[str, int | None, int | None]] = []
+    monkeypatch.setattr(
+        ft,
+        "report_progress",
+        lambda message="", *, done=None, total=None: reported.append((message, done, total)),
+    )
+    fake = FakeClient()
+    monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
+    monkeypatch.setattr(ft, "_artifact_input_size", lambda *args, **kwargs: 2 * 1024 * 1024)
+    monkeypatch.setattr(
+        ft, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"a" * 1024 * 1024] * 2)
+    )
+
+    response = ft.handle_payload(
+        _payload("upload_file", {"artifact_handle": "art_1", "remote_path": "dir/out.bin"})
+    )
+
+    assert response["ok"] is True
+    assert reported[0] == ("Uploading out.bin (MB)", 1, 2)
+    assert reported[-1] == ("Uploading out.bin (MB)", 2, 2)
