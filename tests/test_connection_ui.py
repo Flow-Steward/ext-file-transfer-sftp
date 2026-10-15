@@ -71,7 +71,7 @@ def test_host_key_confirmation_runs_only_for_sftp():
 
 def test_dropbox_is_connected_through_oauth_not_this_form():
     assert "dropbox" not in _form()["data"]["connection_types"]
-    page = yaml.safe_load((BUNDLE_ROOT / "ui/pages/dropbox-setup.yaml").read_text())
+    page = yaml.safe_load((BUNDLE_ROOT / "ui/pages/dropbox.yaml").read_text())
     assert any(
         row.get("data", {}).get("oauth_intent") == "dropbox_connect" for row in page["components"]
     )
