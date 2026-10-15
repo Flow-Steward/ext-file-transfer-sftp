@@ -70,6 +70,7 @@ operations:
     connection_type_ids:
       - ftp
       - sftp
+      - s3
       - dropbox
     display_name: List Files
     description: List the regular files of one directory, bounded to 500 raw entries, without reading file bodies.
@@ -121,6 +122,7 @@ operations:
     connection_type_ids:
       - ftp
       - sftp
+      - s3
       - dropbox
     display_name: Fetch File
     description: Stream one selected remote file into a host-created artifact named download.bin.
@@ -189,6 +191,7 @@ operations:
     connection_type_ids:
       - ftp
       - sftp
+      - s3
       - dropbox
     display_name: Upload File
     description: Stream one host artifact to a remote path; an existing file is replaced only with overwrite.

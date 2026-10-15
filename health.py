@@ -13,6 +13,9 @@ REQUIRED_DEPENDENCIES = {
     "cryptography": "cryptography",
     "invoke": "invoke",
     "nacl": "PyNaCl",
+    "aiobotocore": "aiobotocore",
+    "botocore": "botocore",
+    "aiohttp": "aiohttp",
 }
 
 

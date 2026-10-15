@@ -140,7 +140,7 @@ def test_manifest_scope_contract_has_no_artifact_write():
         row["ref"] for row in page["components"]
     }
     type_ids = [row["connection_type_id"] for row in connection_types["connection_types"]]
-    assert type_ids == ["ftp", "sftp", "dropbox"]
+    assert type_ids == ["ftp", "sftp", "s3", "dropbox"]
     assert "artifact:write" not in str(manifest)
     assert any(row["name"] == "paramiko" for row in manifest["python_requirements"])
     assert (bundle_root / "wheels" / "paramiko-5.0.0-py3-none-any.whl").is_file()
@@ -223,7 +223,7 @@ def test_connection_forms_publish_expected_secret_fields():
     }
     assert "host_key_fingerprint" not in {row["path"] for row in form["fields"]}
     protocol_field = next(row for row in form["fields"] if row["path"] == "protocol")
-    assert {row["value"] for row in protocol_field["options"]} == {"ftp", "sftp"}
+    assert {row["value"] for row in protocol_field["options"]} == {"ftp", "sftp", "s3"}
     private_key_field = next(row for row in form["fields"] if row["path"] == "private_key")
     assert private_key_field["widget"] == "textarea"
     assert private_key_field["visible_if"] == [{"path": "protocol", "eq": "sftp"}]

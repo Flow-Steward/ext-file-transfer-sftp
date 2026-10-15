@@ -1,7 +1,7 @@
 component_id: file_transfer_connection
 type: connection_form
 title: File transfer connection
-description: Choose FTP/FTPS or SFTP, then store project-scoped connection settings and credentials. For SFTP, the server identity is fetched automatically when you save.
+description: Choose FTP/FTPS, SFTP or S3-compatible storage, then store project-scoped connection settings and credentials. For SFTP, the server identity is fetched automatically when you save. Dropbox accounts are connected on the Dropbox tab.
 data:
   connection_kind: extension
   connection_type_field: protocol
@@ -96,6 +96,33 @@ data:
         allow_insecure_ftp: false
         connect_timeout_seconds: 15
         read_timeout_seconds: 30
+    s3:
+      connection_type: s3
+      provider: s3
+      config_fields:
+        - endpoint_url
+        - region
+        - bucket
+        - root_prefix
+        - addressing_style
+        - connect_timeout_seconds
+        - read_timeout_seconds
+      secret_fields:
+        - access_key_id
+        - secret_access_key
+        - session_token
+      required_secret_fields:
+        - access_key_id
+        - secret_access_key
+      tags:
+        - file-transfer
+        - s3
+      defaults:
+        display_name: S3-compatible storage
+        root_prefix: ""
+        addressing_style: path
+        connect_timeout_seconds: 15
+        read_timeout_seconds: 30
 defaults:
   protocol: sftp
   display_name: SFTP
@@ -113,6 +140,8 @@ fields:
         label: SFTP
       - value: ftp
         label: FTP / FTPS
+      - value: s3
+        label: S3-compatible storage
   - path: display_name
     label: Display name
     widget: text
@@ -123,6 +152,11 @@ fields:
     label: Server
     widget: text
     required: true
+    visible_if:
+      - path: protocol
+        in:
+          - ftp
+          - sftp
   - path: port
     label: Port
     widget: integer
@@ -130,10 +164,20 @@ fields:
     minimum: 1
     maximum: 65535
     step: 1
+    visible_if:
+      - path: protocol
+        in:
+          - ftp
+          - sftp
   - path: root_path
     label: Remote folder
     widget: text
     required: true
+    visible_if:
+      - path: protocol
+        in:
+          - ftp
+          - sftp
   - path: use_tls
     label: Use explicit FTPS
     widget: boolean
@@ -147,6 +191,65 @@ fields:
     visible_if:
       - path: protocol
         eq: ftp
+  - path: endpoint_url
+    label: Endpoint URL
+    widget: text
+    required: true
+    help: HTTPS origin only, for example https://s3.eu-central-1.amazonaws.com. No path, query or credentials.
+    visible_if:
+      - path: protocol
+        eq: s3
+  - path: region
+    label: Region
+    widget: text
+    required: true
+    visible_if:
+      - path: protocol
+        eq: s3
+  - path: bucket
+    label: Bucket
+    widget: text
+    required: true
+    visible_if:
+      - path: protocol
+        eq: s3
+  - path: root_prefix
+    label: Key prefix
+    widget: text
+    help: Every path is relative to this prefix inside the bucket. Leave empty for the bucket root; no trailing slash.
+    visible_if:
+      - path: protocol
+        eq: s3
+  - path: addressing_style
+    label: Addressing style
+    widget: select
+    options:
+      - value: path
+        label: Path style (bucket in the path)
+      - value: virtual
+        label: Virtual host (bucket in the host name)
+    visible_if:
+      - path: protocol
+        eq: s3
+  - path: access_key_id
+    label: Access key ID
+    widget: secret
+    visible_if:
+      - path: protocol
+        eq: s3
+  - path: secret_access_key
+    label: Secret access key
+    widget: secret
+    visible_if:
+      - path: protocol
+        eq: s3
+  - path: session_token
+    label: Session token
+    widget: secret
+    help: Only for temporary credentials. Flow Steward never reads keys from the server's environment or AWS profiles.
+    visible_if:
+      - path: protocol
+        eq: s3
   - path: connect_timeout_seconds
     label: Connect timeout seconds
     widget: integer
@@ -163,6 +266,11 @@ fields:
     label: Username
     widget: secret
     required: true
+    visible_if:
+      - path: protocol
+        in:
+          - ftp
+          - sftp
   - path: password
     label: Password
     widget: secret

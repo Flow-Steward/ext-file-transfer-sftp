@@ -139,6 +139,77 @@ connection_types:
       requires_pinned_peer: true
       requires_host_key_fingerprint: true
       disables_agent_and_local_key_discovery: true
+  - connection_type_id: s3
+    display_name: S3-compatible storage
+    description: One bucket and key prefix on AWS S3 or an S3-compatible service, reached with explicit access keys.
+    config_schema:
+      type: object
+      additionalProperties: false
+      required: [endpoint_url, region, bucket]
+      properties:
+        endpoint_url:
+          type: string
+          minLength: 9
+          pattern: "^https://[^/?#@]+/?$"
+          title: Endpoint URL
+          description: HTTPS origin of the service, for example https://s3.eu-central-1.amazonaws.com.
+        region:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+          title: Region
+        bucket:
+          type: string
+          minLength: 3
+          maxLength: 63
+          title: Bucket
+        root_prefix:
+          type: string
+          default: ""
+          title: Key prefix
+          description: Folder-like prefix every path is relative to, without a trailing slash. Empty is the bucket root.
+        addressing_style:
+          type: string
+          enum: [path, virtual]
+          default: path
+          title: Addressing style
+        connect_timeout_seconds:
+          type: number
+          minimum: 1
+          maximum: 60
+          default: 15
+          title: Connect timeout
+        read_timeout_seconds:
+          type: number
+          minimum: 1
+          maximum: 300
+          default: 30
+          title: Read timeout
+    secret_schema:
+      type: object
+      additionalProperties: false
+      required: [access_key_id, secret_access_key]
+      properties:
+        access_key_id:
+          type: string
+          minLength: 1
+          title: Access key ID
+        secret_access_key:
+          type: string
+          minLength: 1
+          title: Secret access key
+        session_token:
+          type: string
+          title: Session token
+    capabilities:
+      test_connection: true
+      list_files: true
+      fetch_file: true
+      upload_file: true
+    safety_profile:
+      protocol: https
+      requires_pinned_peer: true
+      explicit_credentials_only: true
+      conditional_create: true
   - connection_type_id: dropbox
     display_name: Dropbox
     description: One Dropbox account authorized in this project to list, read and write files below its root folder.

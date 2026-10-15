@@ -6,8 +6,8 @@ extension_id: flowsteward.file-transfer
 kind: tool_provider
 version: 0.2.0
 display_name: File Transfer
-description: Streams opaque files over FTP, explicit FTPS, SFTP and Dropbox using
-  Flow Steward artifact grants.
+description: Streams opaque files over FTP, explicit FTPS, SFTP, S3-compatible
+  storage and Dropbox using Flow Steward artifact grants.
 vendor:
   name: Flow Steward
   support_url: https://github.com/Flow-Steward/ext-file-transfer-sftp/issues
@@ -19,9 +19,10 @@ listing:
   - ftp
   - ftps
   - sftp
+  - s3
   - dropbox
-  summary: Move files over FTP, FTPS, SFTP and Dropbox using Flow Steward artifact
-    grants.
+  summary: Move files over FTP, FTPS, SFTP, S3-compatible storage and Dropbox using
+    Flow Steward artifact grants.
 features:
 - tool
 - action
