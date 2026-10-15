@@ -55,9 +55,10 @@ def _referenced_paths(extension: dict[str, Any]) -> list[str]:
             paths.append(value)
     runtime_v2 = _as_dict(_as_dict(extension.get("runtime")).get("extension_contract_v2"))
     for value in runtime_v2.values():
-        text = str(value or "").strip()
-        if text:
-            paths.append(text)
+        # Contract files are referenced by path; inline declarations such as
+        # `oauth_providers` are structured data, not file names.
+        if isinstance(value, str) and value.strip():
+            paths.append(value.strip())
     for key in ("ui_manifest", "action_manifest"):
         value = str(extension.get(key) or "").strip()
         if value:
