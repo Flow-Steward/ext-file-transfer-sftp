@@ -15,6 +15,7 @@ from typing import Any
 import file_transfer_extension as protocol
 from connections.dropbox import open_dropbox
 from connections.ftp import FTPConnection
+from connections.s3 import S3Connection, parse_s3_config
 from connections.sftp import SFTPConnection
 from file_connections import Deadline, FileConnection
 from file_errors import FileTransferError
@@ -52,6 +53,27 @@ def _test_dropbox(payload: dict[str, Any], deadline: Deadline) -> dict[str, Any]
     return {"protocol": "dropbox", "use_tls": None}
 
 
+@contextmanager
+def _s3_connection(payload: dict[str, Any], deadline: Deadline) -> Iterator[S3Connection]:
+    connection = S3Connection(parse_s3_config(payload), deadline).open()
+    try:
+        yield connection
+    finally:
+        connection.close()
+
+
+@contextmanager
+def _open_s3(payload: dict[str, Any], deadline: Deadline) -> Iterator[FileConnection]:
+    with _s3_connection(payload, deadline) as connection:
+        yield connection
+
+
+def _test_s3(payload: dict[str, Any], deadline: Deadline) -> dict[str, Any]:
+    with _s3_connection(payload, deadline) as connection:
+        connection.check_root()
+    return {"protocol": "s3", "use_tls": None}
+
+
 @dataclass(frozen=True)
 class _ConnectionType:
     open: Callable[[dict[str, Any], Deadline], AbstractContextManager[FileConnection]]
@@ -65,6 +87,7 @@ _CONNECTION_TYPES: dict[str, _ConnectionType] = {
     "ftps": _PROTOCOL_CLIENT,
     "ftp_tls": _PROTOCOL_CLIENT,
     "sftp": _PROTOCOL_CLIENT,
+    "s3": _ConnectionType(open=_open_s3, test=_test_s3),
     "dropbox": _ConnectionType(open=_open_dropbox, test=_test_dropbox),
 }
 
@@ -74,7 +97,7 @@ def _connection_type(payload: dict[str, Any]) -> _ConnectionType:
     kind = _CONNECTION_TYPES.get(type_id)
     if kind is None:
         raise FileTransferError(
-            "invalid_connection", "Connection type must be ftp, sftp or dropbox"
+            "invalid_connection", "Connection type must be ftp, sftp, s3 or dropbox"
         )
     return kind
 

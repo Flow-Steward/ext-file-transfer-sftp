@@ -21,6 +21,7 @@ from urllib.request import Request
 from flowsteward_extension_sdk import open_pinned_url, parse_retry_after
 
 import file_transfer_extension as protocol
+from connections import exact_pieces
 from file_connections import (
     STREAM_CHUNK_BYTES,
     Deadline,
@@ -164,7 +165,7 @@ class DropboxConnection:
             "mute": True,
             "strict_conflict": False,
         }
-        pieces = _pieces(chunks, UPLOAD_PIECE_BYTES)
+        pieces = exact_pieces(chunks, UPLOAD_PIECE_BYTES)
         first = next(pieces, b"")
         pending = next(pieces, None)
         if pending is None:
@@ -367,18 +368,6 @@ class _ResponseChunks:
             self._closed = True
             with contextlib.suppress(Exception):
                 self._response.close()
-
-
-def _pieces(chunks: Iterable[bytes], size: int) -> Iterator[bytes]:
-    """Re-slice a stream into pieces of exactly ``size`` bytes (the last may be shorter)."""
-    buffer = bytearray()
-    for chunk in chunks:
-        buffer.extend(chunk)
-        while len(buffer) >= size:
-            yield bytes(buffer[:size])
-            del buffer[:size]
-    if buffer:
-        yield bytes(buffer)
 
 
 def _listed_file(entry: Any, *, directory: str) -> RemoteFile | None:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from typing import Any
 
 from file_connections import (
@@ -62,3 +62,18 @@ def _remote_file(entry: Any) -> RemoteFile:
         modified_at=entry.modified_at,
         raw_modified=entry.raw_modified,
     )
+
+
+def exact_pieces(chunks: Iterable[bytes], size: int) -> Iterator[bytes]:
+    """Re-slice a one-shot stream into pieces of exactly ``size`` bytes (the last may be shorter).
+
+    Holds at most one piece plus one incoming chunk; an empty stream yields nothing.
+    """
+    buffer = bytearray()
+    for chunk in chunks:
+        buffer.extend(chunk)
+        while len(buffer) >= size:
+            yield bytes(buffer[:size])
+            del buffer[:size]
+    if buffer:
+        yield bytes(buffer)
