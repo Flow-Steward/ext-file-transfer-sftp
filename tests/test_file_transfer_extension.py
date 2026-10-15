@@ -13,6 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import file_operations as ops
 import file_transfer_extension as ft
 import health as ft_health
 
@@ -102,7 +103,7 @@ class FakeClient:
         return ft.RemoteEntry(name=Path(path).name, path=path, size_bytes=len(self.body))
 
     def upload_file(self, remote_path, chunks, *, overwrite):
-        payload = b"".join(chunks)
+        # Like the real clients: a known collision is refused before the source is read.
         if not overwrite and remote_path in self.existing:
             raise ft.FileTransferError(
                 "already_exists",
@@ -110,6 +111,7 @@ class FakeClient:
                 external_effect_status="failed",
                 definitely_no_external_effect=True,
             )
+        payload = b"".join(chunks)
         self.uploads.append((remote_path, payload, overwrite))
         return {"overwrite_protection": "best_effort"}
 
@@ -236,7 +238,7 @@ def test_plaintext_ftp_requires_explicit_acknowledgement_before_network(monkeypa
     resolve = MagicMock(side_effect=AssertionError("network resolution must not run"))
     monkeypatch.setattr(ft, "resolve_pinned_ips", resolve)
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -253,7 +255,7 @@ def test_ftp_command_fields_reject_crlf_before_network(monkeypatch):
     resolve = MagicMock(side_effect=AssertionError("network resolution must not run"))
     monkeypatch.setattr(ft, "resolve_pinned_ips", resolve)
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -270,10 +272,10 @@ def test_connection_numeric_fields_are_strict_before_network(monkeypatch):
     resolve = MagicMock(side_effect=AssertionError("network resolution must not run"))
     monkeypatch.setattr(ft, "resolve_pinned_ips", resolve)
 
-    bad_port = ft.handle_payload(
+    bad_port = ops.handle_payload(
         _payload("list_files", {"path": "."}, config={"port": "not-a-port"})
     )
-    bad_timeout = ft.handle_payload(
+    bad_timeout = ops.handle_payload(
         _payload("list_files", {"path": "."}, config={"connect_timeout_seconds": "NaN"})
     )
 
@@ -291,7 +293,7 @@ def test_connection_accepts_host_runtime_connection_type_shape(monkeypatch):
     connection = payload["action"]["target"]["connection"]
     connection["connection_type"] = connection.pop("connection_type_id")
 
-    response = ft.handle_payload(payload)
+    response = ops.handle_payload(payload)
 
     assert response["ok"] is True
     assert response["result"]["protocol"] == "sftp"
@@ -302,8 +304,8 @@ def test_payload_numeric_fields_are_strict_before_network(monkeypatch):
     client_for = MagicMock(side_effect=AssertionError("protocol should not run"))
     monkeypatch.setattr(ft, "_client_for", client_for)
 
-    bad_limit = ft.handle_payload(_payload("list_files", {"path": ".", "limit": "abc"}))
-    bad_max = ft.handle_payload(_payload("fetch_file", {"path": "in.csv", "max_bytes": "abc"}))
+    bad_limit = ops.handle_payload(_payload("list_files", {"path": ".", "limit": "abc"}))
+    bad_max = ops.handle_payload(_payload("fetch_file", {"path": "in.csv", "max_bytes": "abc"}))
 
     assert bad_limit["ok"] is False
     assert bad_limit["error_code"] == "invalid_payload"
@@ -317,7 +319,7 @@ def test_sftp_rejects_password_with_private_key_passphrase_before_network(monkey
         ft.socket, "create_connection", MagicMock(side_effect=AssertionError("no socket"))
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -337,7 +339,7 @@ def test_errors_redact_secret_echo_from_malicious_server(monkeypatch):
 
     monkeypatch.setattr(ft, "_client_for", lambda _config: EchoClient())
 
-    response = ft.handle_payload(_payload("list_files", {"path": "."}))
+    response = ops.handle_payload(_payload("list_files", {"path": "."}))
 
     assert response["ok"] is False
     assert "secret" not in response["error"]
@@ -351,7 +353,7 @@ def test_errors_redact_short_secret_echo_from_malicious_server(monkeypatch):
 
     monkeypatch.setattr(ft, "_client_for", lambda _config: EchoClient())
 
-    response = ft.handle_payload(_payload("list_files", {"path": "."}, secrets={"password": "xy"}))
+    response = ops.handle_payload(_payload("list_files", {"path": "."}, secrets={"password": "xy"}))
 
     assert response["ok"] is False
     assert "xy" not in response["error"]
@@ -363,7 +365,7 @@ def test_private_target_block_happens_before_secret_use(monkeypatch):
         raise ft.PinnedPeerError("blocked")
 
     monkeypatch.setattr(ft, "resolve_pinned_ips", _blocked)
-    response = ft.handle_payload(_payload("list_files", {"path": "."}))
+    response = ops.handle_payload(_payload("list_files", {"path": "."}))
 
     assert response["ok"] is False
     assert response["error_code"] == "network_blocked"
@@ -375,7 +377,7 @@ def test_list_files_caps_raw_entries_and_filters_glob(monkeypatch):
     fake = FakeClient(entries=entries)
     monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload("list_files", {"path": ".", "name_glob": "*.csv", "limit": 2})
     )
 
@@ -388,7 +390,7 @@ def test_list_files_requires_path_before_network(monkeypatch):
     client_for = MagicMock(side_effect=AssertionError("protocol should not run"))
     monkeypatch.setattr(ft, "_client_for", client_for)
 
-    response = ft.handle_payload(_payload("list_files", {}))
+    response = ops.handle_payload(_payload("list_files", {}))
 
     assert response["ok"] is False
     assert response["error_code"] == "invalid_payload"
@@ -417,9 +419,9 @@ def test_fetch_glob_selects_latest_modified_and_writes_fixed_artifact(monkeypatc
         }
 
     write = MagicMock(side_effect=_write)
-    monkeypatch.setattr(ft, "write_artifact_stream", write)
+    monkeypatch.setattr(ops, "write_artifact_stream", write)
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "fetch_file",
             {"path": "in", "name_glob": "*.csv", "select": "latest_modified"},
@@ -441,7 +443,7 @@ def test_fetch_rejects_directory_entry_501_before_selection(monkeypatch):
 
     monkeypatch.setattr(ft, "_client_for", lambda _config: TooLargeClient())
 
-    response = ft.handle_payload(_payload("fetch_file", {"path": "in", "name_glob": "*.csv"}))
+    response = ops.handle_payload(_payload("fetch_file", {"path": "in", "name_glob": "*.csv"}))
 
     assert response["ok"] is False
     assert response["error_code"] == "directory_too_large"
@@ -455,8 +457,8 @@ def test_fetch_enforces_streaming_cap_without_successful_artifact(monkeypatch):
         list(chunks)
         return {"artifact_handle": "art_out"}
 
-    monkeypatch.setattr(ft, "write_artifact_stream", _consume)
-    response = ft.handle_payload(_payload("fetch_file", {"path": "file.bin", "max_bytes": 3}))
+    monkeypatch.setattr(ops, "write_artifact_stream", _consume)
+    response = ops.handle_payload(_payload("fetch_file", {"path": "file.bin", "max_bytes": 3}))
 
     assert response["ok"] is False
     assert response["error_code"] == "max_bytes_exceeded"
@@ -466,9 +468,9 @@ def test_transfer_limit_uses_shared_operator_artifact_policy(monkeypatch):
     configured = 2 * 1024 * 1024 * 1024
     monkeypatch.setenv("FS_EXTENSION_ARTIFACT_MAX_BYTES", str(configured))
 
-    assert ft._effective_max_bytes({}) == configured
-    assert ft._effective_max_bytes({"max_bytes": 1024 * 1024}) == 1024 * 1024
-    assert ft._effective_max_bytes({}, descriptor_limit=3 * 1024 * 1024) == 3 * 1024 * 1024
+    assert ops._effective_max_bytes({}) == configured
+    assert ops._effective_max_bytes({"max_bytes": 1024 * 1024}) == 1024 * 1024
+    assert ops._effective_max_bytes({}, descriptor_limit=3 * 1024 * 1024) == 3 * 1024 * 1024
 
 
 def test_fetch_exact_path_checks_metadata_before_streaming(monkeypatch):
@@ -482,9 +484,9 @@ def test_fetch_exact_path_checks_metadata_before_streaming(monkeypatch):
 
     write = MagicMock(side_effect=AssertionError("artifact write should not start"))
     monkeypatch.setattr(ft, "_client_for", lambda _config: MissingClient())
-    monkeypatch.setattr(ft, "write_artifact_stream", write)
+    monkeypatch.setattr(ops, "write_artifact_stream", write)
 
-    response = ft.handle_payload(_payload("fetch_file", {"path": "missing.csv"}))
+    response = ops.handle_payload(_payload("fetch_file", {"path": "missing.csv"}))
 
     assert response["ok"] is False
     assert response["error_code"] == "not_found"
@@ -513,10 +515,10 @@ def test_fetch_uses_output_grant_access_size_limit_before_streaming(monkeypatch)
     }
     monkeypatch.setattr(ft, "_client_for", lambda _config: LargeClient())
     monkeypatch.setattr(
-        ft, "write_artifact_stream", MagicMock(side_effect=AssertionError("no write"))
+        ops, "write_artifact_stream", MagicMock(side_effect=AssertionError("no write"))
     )
 
-    response = ft.handle_payload(payload)
+    response = ops.handle_payload(payload)
 
     assert response["ok"] is False
     assert response["error_code"] == "max_bytes_exceeded"
@@ -525,9 +527,9 @@ def test_fetch_uses_output_grant_access_size_limit_before_streaming(monkeypatch)
 def test_fetch_rejects_unfinalized_or_empty_artifact_result(monkeypatch):
     fake = FakeClient(body=b"abc")
     monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
-    monkeypatch.setattr(ft, "write_artifact_stream", MagicMock(return_value={"finalized": False}))
+    monkeypatch.setattr(ops, "write_artifact_stream", MagicMock(return_value={"finalized": False}))
 
-    response = ft.handle_payload(_payload("fetch_file", {"path": "file.bin"}))
+    response = ops.handle_payload(_payload("fetch_file", {"path": "file.bin"}))
 
     assert response["ok"] is False
     assert response["error_code"] == "artifact_write_failed"
@@ -545,8 +547,8 @@ def test_fetch_accepts_public_sdk_artifact_write_result_without_finalized(monkey
             "sha256": hashlib.sha256(body).hexdigest(),
         }
 
-    monkeypatch.setattr(ft, "write_artifact_stream", _write)
-    response = ft.handle_payload(_payload("fetch_file", {"path": "file.bin"}))
+    monkeypatch.setattr(ops, "write_artifact_stream", _write)
+    response = ops.handle_payload(_payload("fetch_file", {"path": "file.bin"}))
 
     assert response["ok"] is True
     assert response["result"]["artifact_handle"] == "art_out"
@@ -570,8 +572,8 @@ def test_fetch_requires_complete_artifact_write_result(monkeypatch):
             "finalized": False,
         },
     ):
-        monkeypatch.setattr(ft, "write_artifact_stream", MagicMock(return_value=result))
-        response = ft.handle_payload(_payload("fetch_file", {"path": "file.bin"}))
+        monkeypatch.setattr(ops, "write_artifact_stream", MagicMock(return_value=result))
+        response = ops.handle_payload(_payload("fetch_file", {"path": "file.bin"}))
 
         assert response["ok"] is False
         assert response["error_code"] == "artifact_write_failed"
@@ -580,10 +582,10 @@ def test_fetch_requires_complete_artifact_write_result(monkeypatch):
 def test_upload_test_mode_suppresses_before_network_or_artifact(monkeypatch):
     monkeypatch.setattr(ft, "_client_for", MagicMock(side_effect=AssertionError("no network")))
     monkeypatch.setattr(
-        ft, "stream_artifact_bytes", MagicMock(side_effect=AssertionError("no read"))
+        ops, "stream_artifact_bytes", MagicMock(side_effect=AssertionError("no read"))
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "upload_file",
             {"artifact_handle": "art_1", "remote_path": "out.csv"},
@@ -597,7 +599,7 @@ def test_upload_test_mode_suppresses_before_network_or_artifact(monkeypatch):
 
 def test_malformed_test_mode_is_rejected_before_connection_validation(monkeypatch):
     monkeypatch.setattr(ft, "_client_for", MagicMock(side_effect=AssertionError("no network")))
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         {
             "runtime_context": {"test_mode": "definitely"},
             "action": {
@@ -617,10 +619,10 @@ def test_malformed_test_mode_is_rejected_before_connection_validation(monkeypatc
 def test_upload_test_mode_suppresses_before_connection_validation(monkeypatch):
     monkeypatch.setattr(ft, "_client_for", MagicMock(side_effect=AssertionError("no network")))
     monkeypatch.setattr(
-        ft, "stream_artifact_bytes", MagicMock(side_effect=AssertionError("no read"))
+        ops, "stream_artifact_bytes", MagicMock(side_effect=AssertionError("no read"))
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         {
             "runtime_context": {"test_mode": True},
             "action": {
@@ -651,7 +653,7 @@ def test_secret_values_preserve_leading_and_trailing_whitespace():
 
 
 def test_non_object_payload_returns_structured_invalid_payload():
-    response = ft.handle_payload(cast(Any, []))
+    response = ops.handle_payload(cast(Any, []))
 
     assert response["ok"] is False
     assert response["error_code"] == "invalid_payload"
@@ -690,9 +692,9 @@ def test_main_rejects_non_object_json_without_traceback():
 def test_upload_streams_artifact_and_reports_best_effort_overwrite(monkeypatch):
     fake = FakeClient()
     monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
-    monkeypatch.setattr(ft, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"ab", b"cd"]))
+    monkeypatch.setattr(ops, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"ab", b"cd"]))
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload("upload_file", {"artifact_handle": "art_1", "remote_path": "out.csv"})
     )
 
@@ -706,9 +708,9 @@ def test_upload_known_collision_preserves_no_effect(monkeypatch):
     fake = FakeClient()
     fake.existing.add("out.csv")
     monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
-    monkeypatch.setattr(ft, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"ab"]))
+    monkeypatch.setattr(ops, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"ab"]))
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload("upload_file", {"artifact_handle": "art_1", "remote_path": "out.csv"})
     )
 
@@ -722,9 +724,9 @@ def test_upload_rejects_artifact_metadata_size_before_network(monkeypatch):
     client_for = MagicMock(side_effect=AssertionError("remote connection should not start"))
     stream = MagicMock(side_effect=AssertionError("artifact body should not stream"))
     monkeypatch.setattr(ft, "_client_for", client_for)
-    monkeypatch.setattr(ft, "stream_artifact_bytes", stream)
+    monkeypatch.setattr(ops, "stream_artifact_bytes", stream)
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "upload_file",
             {
@@ -746,14 +748,14 @@ def test_upload_rejects_input_grant_access_limit_before_network(monkeypatch):
     client_for = MagicMock(side_effect=AssertionError("remote connection should not start"))
     stream = MagicMock(side_effect=AssertionError("artifact body should not stream"))
     monkeypatch.setattr(ft, "_client_for", client_for)
-    monkeypatch.setattr(ft, "stream_artifact_bytes", stream)
+    monkeypatch.setattr(ops, "stream_artifact_bytes", stream)
     payload = _payload(
         "upload_file",
         {"artifact_handle": "art_1", "remote_path": "out.csv", "_artifact_size_bytes": 4},
     )
     payload["artifacts"]["inputs"][0]["access"]["max_size_bytes"] = 3
 
-    response = ft.handle_payload(payload)
+    response = ops.handle_payload(payload)
 
     assert response["ok"] is False
     assert response["error_code"] == "max_bytes_exceeded"
@@ -792,7 +794,7 @@ def test_ftp_upload_midstream_limit_reports_unknown_effect():
     client = ft.FTPClient(config)
     fake_ftp = FakeFTP()
     _attach_fake_ftp(client, fake_ftp)
-    chunks, _state = ft._hashing_chunks([b"ab", b"cd"], max_bytes=3)
+    chunks, _state = ops._hashing_chunks([b"ab", b"cd"], max_bytes=3)
 
     try:
         client.upload_file("out.csv", chunks, overwrite=True)
@@ -809,7 +811,7 @@ def test_path_validation_rejects_empty_segments_without_protocol_calls(monkeypat
     client_for = MagicMock(side_effect=AssertionError("protocol should not run"))
     monkeypatch.setattr(ft, "_client_for", client_for)
 
-    response = ft.handle_payload(_payload("fetch_file", {"path": "foo//bar"}))
+    response = ops.handle_payload(_payload("fetch_file", {"path": "foo//bar"}))
 
     assert response["ok"] is False
     assert response["error_code"] == "invalid_path"
@@ -820,7 +822,7 @@ def test_path_validation_rejects_escape_without_protocol_calls(monkeypatch):
     client_for = MagicMock(side_effect=AssertionError("protocol should not run"))
     monkeypatch.setattr(ft, "_client_for", client_for)
 
-    response = ft.handle_payload(_payload("fetch_file", {"path": "../escape.csv"}))
+    response = ops.handle_payload(_payload("fetch_file", {"path": "../escape.csv"}))
 
     assert response["ok"] is False
     assert response["error_code"] == "invalid_path"
@@ -832,7 +834,7 @@ def test_sftp_rejects_malformed_fingerprint_before_network(monkeypatch):
         ft.socket, "create_connection", MagicMock(side_effect=AssertionError("no socket"))
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -851,7 +853,7 @@ def test_sftp_rejects_short_fingerprint_digest_before_network(monkeypatch):
     )
     short_digest = base64.b64encode(b"too-short").decode("ascii").rstrip("=")
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -915,7 +917,7 @@ def test_sftp_host_key_discovery_does_not_authenticate(monkeypatch):
         ),
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         {
             "contract_version": "extension_host_v1",
             "action": {
@@ -1031,7 +1033,7 @@ def test_sftp_verifies_host_key_before_auth(monkeypatch):
         ),
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -1092,7 +1094,7 @@ def test_sftp_authentication_exception_is_authentication_failed(monkeypatch):
         ),
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -1171,7 +1173,7 @@ def test_sftp_allows_rsa_sha2_negotiated_host_key(monkeypatch):
         ),
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload(
             "list_files",
             {"path": "."},
@@ -1227,7 +1229,7 @@ def test_sftp_rejects_mismatched_host_key_before_auth(monkeypatch):
         ),
     )
 
-    response = ft.handle_payload(_payload("list_files", {"path": "."}, connection_type="sftp"))
+    response = ops.handle_payload(_payload("list_files", {"path": "."}, connection_type="sftp"))
 
     assert response["ok"] is False
     assert response["error_code"] == "host_key_mismatch"
@@ -1276,7 +1278,7 @@ def test_sftp_connect_failure_closes_socket_and_transport(monkeypatch):
     monkeypatch.setattr(ft, "resolve_pinned_ips", lambda *args, **kwargs: ["203.0.113.10"])
     monkeypatch.setattr(ft.socket, "create_connection", lambda *args, **kwargs: FakeSock())
 
-    response = ft.handle_payload(_payload("list_files", {"path": "."}, connection_type="sftp"))
+    response = ops.handle_payload(_payload("list_files", {"path": "."}, connection_type="sftp"))
 
     assert response["ok"] is False
     assert response["error_code"] == "host_key_mismatch"
@@ -1529,9 +1531,9 @@ def test_upload_metadata_timeout_does_not_mutate_destination(monkeypatch):
 
     fake = UnknownMetadataClient()
     monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
-    monkeypatch.setattr(ft, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"ab"]))
+    monkeypatch.setattr(ops, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"ab"]))
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload("upload_file", {"artifact_handle": "art_1", "remote_path": "out.csv"})
     )
 
@@ -2014,9 +2016,9 @@ def test_upload_lazy_artifact_read_error_reports_artifact_read_failed(monkeypatc
 
     fake = FakeClient()
     monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
-    monkeypatch.setattr(ft, "stream_artifact_bytes", _broken_stream)
+    monkeypatch.setattr(ops, "stream_artifact_bytes", _broken_stream)
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload("upload_file", {"artifact_handle": "art_1", "remote_path": "out.csv"})
     )
 
@@ -2249,7 +2251,7 @@ def test_list_files_accepts_the_connection_root(monkeypatch):
     entries = [ft.RemoteEntry(name="DistFeed.csv", path="DistFeed.csv", size_bytes=3)]
     monkeypatch.setattr(ft, "_client_for", lambda _config: FakeClient(entries=entries))
 
-    response = ft.handle_payload(_payload("list_files", {"path": "."}))
+    response = ops.handle_payload(_payload("list_files", {"path": "."}))
 
     assert response["ok"] is True
     assert [item["name"] for item in response["result"]["files"]] == ["DistFeed.csv"]
@@ -2275,9 +2277,9 @@ def test_fetch_file_accepts_the_connection_root_as_the_glob_directory(monkeypatc
             "sha256": hashlib.sha256(body).hexdigest(),
         }
 
-    monkeypatch.setattr(ft, "write_artifact_stream", _write)
+    monkeypatch.setattr(ops, "write_artifact_stream", _write)
 
-    response = ft.handle_payload(_payload("fetch_file", {"path": ".", "name_glob": "*.csv"}))
+    response = ops.handle_payload(_payload("fetch_file", {"path": ".", "name_glob": "*.csv"}))
 
     assert response["ok"] is True, response
     assert response["result"]["remote_path"] == "DistFeed.csv"
@@ -2287,7 +2289,7 @@ def test_fetch_file_without_a_glob_still_requires_a_file_path(monkeypatch):
     """Without a glob, `path` names a file, so the root is not a usable value."""
     monkeypatch.setattr(ft, "_client_for", lambda _config: FakeClient())
 
-    response = ft.handle_payload(_payload("fetch_file", {"path": "."}))
+    response = ops.handle_payload(_payload("fetch_file", {"path": "."}))
 
     assert response["ok"] is False
     assert response["error_code"] == "invalid_path"
@@ -2302,7 +2304,7 @@ def test_traversal_protection_is_unchanged(monkeypatch, path):
     monkeypatch.setattr(ft, "_client_for", lambda _config: FakeClient())
 
     for operation, extra in (("list_files", {}), ("fetch_file", {"name_glob": "*.csv"})):
-        response = ft.handle_payload(_payload(operation, {"path": path, **extra}))
+        response = ops.handle_payload(_payload(operation, {"path": path, **extra}))
         assert response["ok"] is False, (operation, path)
         assert response["error_code"] == "invalid_path"
 
@@ -2310,12 +2312,12 @@ def test_traversal_protection_is_unchanged(monkeypatch, path):
 def test_transfer_progress_counts_whole_megabytes_against_a_known_size(monkeypatch):
     reported: list[tuple[str, int | None, int | None]] = []
     monkeypatch.setattr(
-        ft,
+        ops,
         "report_progress",
         lambda message="", *, done=None, total=None: reported.append((message, done, total)),
     )
     ticks = iter([0.0, 0.2, 2.0, 2.1, 4.0])
-    report = ft._transfer_progress(
+    report = ops._transfer_progress(
         "Downloading", "big.zip", total_bytes=3 * 1024 * 1024 + 5, clock=lambda: next(ticks)
     )
     mb = 1024 * 1024
@@ -2336,12 +2338,12 @@ def test_transfer_progress_counts_whole_megabytes_against_a_known_size(monkeypat
 def test_transfer_progress_without_a_size_says_how_much_has_moved(monkeypatch):
     reported: list[tuple[str, int | None]] = []
     monkeypatch.setattr(
-        ft,
+        ops,
         "report_progress",
         lambda message="", *, done=None, total=None: reported.append((message, done)),
     )
     ticks = iter([0.0, 5.0])
-    report = ft._transfer_progress(
+    report = ops._transfer_progress(
         "Uploading", "out.csv", total_bytes=None, clock=lambda: next(ticks)
     )
 
@@ -2354,18 +2356,18 @@ def test_transfer_progress_without_a_size_says_how_much_has_moved(monkeypatch):
 def test_upload_reports_its_progress(monkeypatch):
     reported: list[tuple[str, int | None, int | None]] = []
     monkeypatch.setattr(
-        ft,
+        ops,
         "report_progress",
         lambda message="", *, done=None, total=None: reported.append((message, done, total)),
     )
     fake = FakeClient()
     monkeypatch.setattr(ft, "_client_for", lambda _config: fake)
-    monkeypatch.setattr(ft, "_artifact_input_size", lambda *args, **kwargs: 2 * 1024 * 1024)
+    monkeypatch.setattr(ops, "_artifact_input_size", lambda *args, **kwargs: 2 * 1024 * 1024)
     monkeypatch.setattr(
-        ft, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"a" * 1024 * 1024] * 2)
+        ops, "stream_artifact_bytes", lambda *args, **kwargs: iter([b"a" * 1024 * 1024] * 2)
     )
 
-    response = ft.handle_payload(
+    response = ops.handle_payload(
         _payload("upload_file", {"artifact_handle": "art_1", "remote_path": "dir/out.bin"})
     )
 

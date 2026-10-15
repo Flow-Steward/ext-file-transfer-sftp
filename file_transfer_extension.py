@@ -1,21 +1,25 @@
+"""FTP, explicit FTPS and SFTP clients behind the FTP and SFTP file connections.
+
+The protocol code here is the proven low-level layer: pinned sockets, host keys,
+TLS, temporary-file uploads. The common operation layer lives in
+``file_operations`` and reaches these clients only through ``connections``.
+"""
+
 from __future__ import annotations
 
 import base64
 import contextlib
 import errno
-import fnmatch
 import hashlib
 import hmac
 import io
 import math
-import os
 import posixpath
 import socket
 import ssl
 import stat
-import time
 import uuid
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -27,57 +31,24 @@ from typing import Any
 from flowsteward_extension_sdk import (
     ArtifactAccessError,
     PinnedPeerError,
-    find_artifact_descriptor,
     resolve_pinned_ips,
-    stream_artifact_bytes,
-    write_artifact_stream,
 )
 
-try:
-    from flowsteward_extension_sdk import report_progress
-except ImportError:  # a Core with an SDK older than 0.3.0 shows no progress
+from file_errors import FileTransferError
 
-    def report_progress(
-        message: str = "", *, done: int | None = None, total: int | None = None
-    ) -> None:
-        return None
-
+__all__ = ["FileTransferError", "PinnedPeerError"]
 
 _MESSAGE_SFTP_FINGERPRINT_IS_MALFORMED = "SFTP fingerprint is malformed"
 _MESSAGE_REMOTE_PATH_ALREADY_EXISTS = "Remote path already exists"
 _MESSAGE_REMOTE_FILE_WAS_NOT_FOUND = "Remote file was not found"
 
 EXTENSION_ID = "flowsteward.file-transfer"
-MAX_TRANSFER_BYTES = 200 * 1024 * 1024
-MIN_TRANSFER_BYTES = 1024 * 1024
-MAX_CONFIGURED_TRANSFER_BYTES = 10 * 1024 * 1024 * 1024
-EXTENSION_ARTIFACT_MAX_BYTES_ENV = "FS_EXTENSION_ARTIFACT_MAX_BYTES"
 MAX_RAW_DIRECTORY_ENTRIES = 500
-MAX_LIST_LIMIT = 500
 STREAM_CHUNK_BYTES = 1024 * 1024
-ARTIFACT_BINDING_KEY = "fetched_file"
-UPLOAD_ARTIFACT_BINDING_KEY = "source_artifact"
-ARTIFACT_FILENAME = "download.bin"
-OCTET_STREAM = "application/octet-stream"
 FINGERPRINT_PREFIX = "SHA256:"
 ALLOWED_HOST_KEY_PREFIXES = ("ssh-ed25519", "ecdsa-sha2-nistp", "rsa-sha2-")
 DISALLOWED_SFTP_KEY_TYPES = ("ssh-rsa", "ssh-dss")
 DISALLOWED_SFTP_PUBKEY_ALGORITHMS = ("ssh-rsa",)
-
-
-class FileTransferError(ValueError):
-    def __init__(
-        self,
-        code: str,
-        message: str,
-        *,
-        external_effect_status: str | None = None,
-        definitely_no_external_effect: bool = True,
-    ) -> None:
-        super().__init__(message)
-        self.code = code
-        self.external_effect_status = external_effect_status
-        self.definitely_no_external_effect = definitely_no_external_effect
 
 
 class _DirectoryLimitReached(RuntimeError):
@@ -299,6 +270,31 @@ def _connection_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _connection_settings(connection: dict[str, Any]) -> dict[str, Any]:
+    return _as_dict(
+        connection.get("config")
+        or connection.get("connection_config")
+        or connection.get("provider_config")
+    )
+
+
+def _raw_connection_type(connection: dict[str, Any], config: dict[str, Any]) -> str:
+    return _as_str(
+        connection.get("connection_type_id")
+        or connection.get("connection_type")
+        or connection.get("type")
+        or config.get("connection_type_id")
+        or config.get("connection_type")
+        or config.get("protocol")
+    ).lower()
+
+
+def _connection_type_id(payload: dict[str, Any]) -> str:
+    """The declared connection type, before any per-protocol validation."""
+    connection = _connection_payload(payload)
+    return _raw_connection_type(connection, _connection_settings(connection))
+
+
 def _connection_config(payload: dict[str, Any]) -> ConnectionConfig:
     connection = _connection_payload(payload)
     config = _as_dict(
@@ -307,14 +303,7 @@ def _connection_config(payload: dict[str, Any]) -> ConnectionConfig:
         or connection.get("provider_config")
     )
     secrets = _as_dict(connection.get("secrets"))
-    connection_type = _as_str(
-        connection.get("connection_type_id")
-        or connection.get("connection_type")
-        or connection.get("type")
-        or config.get("connection_type_id")
-        or config.get("connection_type")
-        or config.get("protocol")
-    ).lower()
+    connection_type = _raw_connection_type(connection, config)
     if connection_type in {"ftps", "ftp_tls"}:
         connection_type = "ftp"
         config.setdefault("use_tls", True)
@@ -402,14 +391,7 @@ def _host_key_discovery_config(payload: dict[str, Any]) -> HostKeyDiscoveryConfi
         or connection.get("connection_config")
         or connection.get("provider_config")
     )
-    connection_type = _as_str(
-        connection.get("connection_type_id")
-        or connection.get("connection_type")
-        or connection.get("type")
-        or config.get("connection_type_id")
-        or config.get("connection_type")
-        or config.get("protocol")
-    ).lower()
+    connection_type = _raw_connection_type(connection, config)
     if connection_type != "sftp":
         raise FileTransferError(
             "invalid_connection", "Host key discovery is only available for SFTP"
@@ -505,29 +487,6 @@ def _basename(path: str) -> str:
     return PurePosixPath(path).name
 
 
-def _effective_max_bytes(input_payload: dict[str, Any], descriptor_limit: int | None = None) -> int:
-    configured_limit = _configured_artifact_max_bytes()
-    requested = _strict_int(
-        input_payload.get("max_bytes"),
-        default=configured_limit,
-        field="max_bytes",
-        error_code="invalid_payload",
-        minimum=1,
-    )
-    caps = [requested, configured_limit]
-    if descriptor_limit:
-        caps.append(int(descriptor_limit))
-    return min(caps)
-
-
-def _configured_artifact_max_bytes() -> int:
-    try:
-        configured = int(str(os.environ.get("FS_EXTENSION_ARTIFACT_MAX_BYTES") or "").strip())
-    except (TypeError, ValueError):
-        configured = MAX_TRANSFER_BYTES
-    return max(MIN_TRANSFER_BYTES, min(configured, MAX_CONFIGURED_TRANSFER_BYTES))
-
-
 def _ftp_550_is_not_found(exc: error_perm) -> bool:
     text = str(exc).lower()
     return any(
@@ -543,27 +502,6 @@ def _ftp_550_is_not_found(exc: error_perm) -> bool:
     )
 
 
-def _artifact_output_limit(payload: dict[str, Any]) -> int | None:
-    artifacts = _as_dict(payload.get("artifacts"))
-    for row in _as_list(artifacts.get("outputs")):
-        descriptor = _as_dict(row)
-        if str(descriptor.get("binding_key") or "") == ARTIFACT_BINDING_KEY:
-            access = _as_dict(descriptor.get("access"))
-            value = (
-                access.get("max_size_bytes")
-                or descriptor.get("max_size_bytes")
-                or descriptor.get("size_limit_bytes")
-            )
-            return _as_int(value, 0) or None
-    for key in ("artifact_outputs", "artifacts", "outputs"):
-        for row in _as_list(payload.get(key)):
-            descriptor = _as_dict(row)
-            if str(descriptor.get("binding_key") or "") == ARTIFACT_BINDING_KEY:
-                value = descriptor.get("max_size_bytes") or descriptor.get("size_limit_bytes")
-                return _as_int(value, 0) or None
-    return None
-
-
 def _verify_socket_peer(sock: Any, pinned_ip: str, *, purpose: str) -> None:
     try:
         peer = sock.getpeername()
@@ -575,65 +513,6 @@ def _verify_socket_peer(sock: Any, pinned_ip: str, *, purpose: str) -> None:
             "network_blocked",
             f"{purpose} connected to unexpected peer {peer_host or '<unknown>'}",
         )
-
-
-def _artifact_input_size(payload: dict[str, Any], *, artifact_handle: str) -> int | None:
-    descriptor = find_artifact_descriptor(
-        payload,
-        artifact_id=artifact_handle,
-        binding_key=UPLOAD_ARTIFACT_BINDING_KEY,
-        role="input",
-    )
-    for key in ("size_bytes", "content_length", "byte_length"):
-        value = descriptor.get(key)
-        if value is not None:
-            size = _as_int(value, -1)
-            return size if size >= 0 else None
-    return None
-
-
-def _artifact_input_limit(payload: dict[str, Any], *, artifact_handle: str) -> int | None:
-    descriptor = find_artifact_descriptor(
-        payload,
-        artifact_id=artifact_handle,
-        binding_key=UPLOAD_ARTIFACT_BINDING_KEY,
-        role="input",
-    )
-    access = _as_dict(descriptor.get("access"))
-    value = (
-        access.get("max_size_bytes")
-        or descriptor.get("max_size_bytes")
-        or descriptor.get("size_limit_bytes")
-    )
-    limit = _as_int(value, 0)
-    return limit if limit > 0 else None
-
-
-def _sensitive_values(payload: dict[str, Any]) -> list[str]:
-    connection = _connection_payload(payload)
-    config = _as_dict(
-        connection.get("config")
-        or connection.get("connection_config")
-        or connection.get("provider_config")
-    )
-    secrets = _as_dict(connection.get("secrets"))
-    values: list[str] = []
-    for source in (config, secrets):
-        for key, value in source.items():
-            key_text = str(key).lower()
-            if any(token in key_text for token in ("password", "secret", "private_key", "token")):
-                text = str(value or "")
-                if text:
-                    values.append(text)
-    return values
-
-
-def _redact_error(message: Any, payload: dict[str, Any]) -> str:
-    text = str(message)
-    for value in sorted(_sensitive_values(payload), key=len, reverse=True):
-        if value:
-            text = text.replace(value, "[redacted]")
-    return text
 
 
 class _PinnedFTP(FTP):
@@ -1534,388 +1413,3 @@ def _temporary_remote_path(remote_path: str) -> str:
 
 def _client_for(config: ConnectionConfig):
     return SFTPClient(config) if config.connection_type == "sftp" else FTPClient(config)
-
-
-def _filter_entries(
-    entries: list[RemoteEntry],
-    *,
-    name_glob: str,
-    limit: int,
-    raw_truncated: bool,
-) -> tuple[list[RemoteEntry], bool]:
-    pattern = _as_str(name_glob)
-    if pattern and "/" in pattern:
-        raise FileTransferError("invalid_payload", "name_glob must match basenames only")
-    filtered = [
-        entry for entry in entries if not pattern or fnmatch.fnmatchcase(entry.name, pattern)
-    ]
-    filtered.sort(key=lambda entry: entry.name)
-    truncated = raw_truncated or len(filtered) > limit
-    return filtered[:limit], truncated
-
-
-def _entry_dict(entry: RemoteEntry) -> dict[str, Any]:
-    return {
-        "name": entry.name,
-        "size_bytes": entry.size_bytes,
-        "modified_at": entry.modified_at,
-    }
-
-
-def _select_entry(entries: list[RemoteEntry], *, selector: str, protocol: str) -> RemoteEntry:
-    if not entries:
-        raise FileTransferError("not_found", "No matching file was found")
-    if selector == "only":
-        if len(entries) != 1:
-            raise FileTransferError("ambiguous_match", "More than one file matched")
-        return entries[0]
-    if selector == "latest_name":
-        return max(entries, key=lambda entry: entry.name)
-    if selector == "latest_modified":
-        if any(entry.raw_modified is None for entry in entries):
-            raise FileTransferError(
-                "not_supported_by_server",
-                f"{protocol.upper()} did not provide reliable modification metadata",
-            )
-        return max(entries, key=lambda entry: (entry.raw_modified or 0, entry.name))
-    raise FileTransferError(
-        "invalid_payload", "select must be only, latest_modified, or latest_name"
-    )
-
-
-PROGRESS_MIN_INTERVAL_SECONDS = 1.0
-_MEGABYTE = 1024 * 1024
-
-
-def _transfer_progress(
-    verb: str,
-    name: str,
-    *,
-    total_bytes: int | None,
-    clock: Callable[[], float] = time.monotonic,
-) -> Callable[[int, bool], None]:
-    """Report a transfer in whole megabytes, at most once a second and always at the end.
-
-    With a known size the step shows "N of M" megabytes; without one, how much has moved.
-    """
-    total_mb = math.ceil(total_bytes / _MEGABYTE) if total_bytes else None
-    last = {"mb": 0, "at": float("-inf")}
-
-    def report(size_bytes: int, finished: bool) -> None:
-        done_mb = size_bytes // _MEGABYTE
-        if finished and total_mb:
-            done_mb = total_mb
-        now = clock()
-        if not finished and (
-            done_mb <= last["mb"] or now - last["at"] < PROGRESS_MIN_INTERVAL_SECONDS
-        ):
-            return
-        if finished and done_mb == 0:
-            return  # under a megabyte: nothing worth a progress line
-        last["mb"], last["at"] = done_mb, now
-        if total_mb:
-            report_progress(f"{verb} {name} (MB)", done=done_mb, total=total_mb)
-        else:
-            report_progress(f"{verb} {name}: {done_mb} MB so far", done=done_mb)
-
-    return report
-
-
-def _hashing_chunks(
-    chunks: Iterable[bytes],
-    *,
-    max_bytes: int,
-    progress: Callable[[int, bool], None] | None = None,
-) -> tuple[Iterator[bytes], dict[str, Any]]:
-    state: dict[str, Any] = {"size_bytes": 0, "sha256": hashlib.sha256()}
-
-    def _iter() -> Iterator[bytes]:
-        for chunk in chunks:
-            data = bytes(chunk)
-            state["size_bytes"] += len(data)
-            if state["size_bytes"] > max_bytes:
-                raise FileTransferError("max_bytes_exceeded", "Transfer exceeded max_bytes")
-            state["sha256"].update(data)
-            if progress is not None:
-                progress(state["size_bytes"], False)
-            yield data
-        if progress is not None:
-            progress(state["size_bytes"], True)
-
-    return _iter(), state
-
-
-def _handle_list_files(payload: dict[str, Any], config: ConnectionConfig) -> dict[str, Any]:
-    input_payload = _input_payload(payload)
-    if "path" not in input_payload or _as_str(input_payload.get("path")) == "":
-        raise FileTransferError("invalid_payload", "path is required")
-    path = _validate_root_relative_path(input_payload.get("path"), allow_empty=True)
-    limit = _strict_int(
-        input_payload.get("limit"),
-        default=200,
-        field="limit",
-        error_code="invalid_payload",
-        minimum=1,
-        maximum=MAX_LIST_LIMIT,
-    )
-    with _client_for(config) as client:
-        entries, raw_truncated = client.list_dir(path)
-    filtered, truncated = _filter_entries(
-        entries,
-        name_glob=_as_str(input_payload.get("name_glob")),
-        limit=limit,
-        raw_truncated=raw_truncated,
-    )
-    return {
-        "ok": True,
-        "result": {"files": [_entry_dict(row) for row in filtered], "truncated": truncated},
-    }
-
-
-def _handle_test_connection(config: ConnectionConfig) -> dict[str, Any]:
-    with _client_for(config):
-        return {
-            "ok": True,
-            "result": {
-                "protocol": config.connection_type,
-                "use_tls": config.use_tls if config.connection_type == "ftp" else None,
-            },
-        }
-
-
-def _handle_discover_host_key(payload: dict[str, Any]) -> dict[str, Any]:
-    discovery = _discover_sftp_host_key(_host_key_discovery_config(payload))
-    return {"ok": True, "result": {"protocol": "sftp", **discovery}}
-
-
-def _handle_fetch_file(payload: dict[str, Any], config: ConnectionConfig) -> dict[str, Any]:
-    input_payload = _input_payload(payload)
-    max_bytes = _effective_max_bytes(input_payload, _artifact_output_limit(payload))
-    name_glob = _as_str(input_payload.get("name_glob"))
-    # `path` is a directory when a glob selects the file inside it, and the file
-    # itself otherwise. The connection root is `.` in the directory case, exactly
-    # as it is for list_files; validating it as a file path made the root the one
-    # place a glob could not be used.
-    raw_path = _as_str(input_payload.get("path"))
-    if not name_glob and raw_path.strip() in {"", "."}:
-        raise FileTransferError(
-            "invalid_path",
-            "path must name a file when no name_glob is given; "
-            "to fetch from the connection root, pass path '.' together with a name_glob",
-        )
-    path = _validate_root_relative_path(input_payload.get("path"), allow_empty=bool(name_glob))
-    selector = _as_str(input_payload.get("select") or "only")
-    with _client_for(config) as client:
-        if name_glob:
-            entries, raw_truncated = client.list_dir(path)
-            if raw_truncated:
-                raise FileTransferError("directory_too_large", "Directory exceeded 500 raw entries")
-            filtered, _ = _filter_entries(
-                entries,
-                name_glob=name_glob,
-                limit=MAX_RAW_DIRECTORY_ENTRIES,
-                raw_truncated=False,
-            )
-            selected = _select_entry(filtered, selector=selector, protocol=config.connection_type)
-            remote_path = selected.path
-            metadata_size = selected.size_bytes
-        else:
-            remote_path = path
-            selected = client.stat_file(remote_path)
-            metadata_size = selected.size_bytes
-        if metadata_size is not None and metadata_size > max_bytes:
-            raise FileTransferError("max_bytes_exceeded", "Remote file exceeds max_bytes")
-        chunks, state = _hashing_chunks(
-            client.stream_file(remote_path),
-            max_bytes=max_bytes,
-            progress=_transfer_progress("Downloading", selected.name, total_bytes=metadata_size),
-        )
-        try:
-            write_result = write_artifact_stream(
-                payload,
-                chunks,
-                binding_key=ARTIFACT_BINDING_KEY,
-                content_type=OCTET_STREAM,
-                timeout_seconds=config.read_timeout,
-            )
-        except ArtifactAccessError as exc:
-            raise FileTransferError("artifact_write_failed", str(exc)) from exc
-    sha256 = state["sha256"].hexdigest()
-    artifact_handle = _validate_artifact_write_result(
-        write_result, size_bytes=state["size_bytes"], sha256=sha256
-    )
-    return {
-        "ok": True,
-        "result": {
-            "artifact_handle": artifact_handle,
-            "artifact_filename": ARTIFACT_FILENAME,
-            "source_filename": selected.name,
-            "remote_path": remote_path,
-            "sha256": sha256,
-            "size_bytes": state["size_bytes"],
-        },
-    }
-
-
-def _validate_artifact_write_result(
-    write_result: dict[str, Any], *, size_bytes: int, sha256: str
-) -> str:
-    if not isinstance(write_result, dict):
-        raise FileTransferError(
-            "artifact_write_failed", "Artifact write returned an invalid result"
-        )
-    artifact_handle = _as_str(
-        write_result.get("artifact_handle") or write_result.get("artifact_id")
-    )
-    if not artifact_handle:
-        raise FileTransferError("artifact_write_failed", "Artifact write did not return a handle")
-    reported_size = write_result.get("size_bytes")
-    if reported_size is None:
-        raise FileTransferError("artifact_write_failed", "Artifact write did not return size_bytes")
-    if _as_int(reported_size, -1) != size_bytes:
-        raise FileTransferError(
-            "artifact_write_failed", "Artifact write size did not match streamed bytes"
-        )
-    reported_sha = _as_str(
-        write_result.get("sha256")
-        or write_result.get("checksum_sha256")
-        or write_result.get("checksum")
-    )
-    if not reported_sha:
-        raise FileTransferError("artifact_write_failed", "Artifact write did not return sha256")
-    if not hmac.compare_digest(reported_sha, sha256):
-        raise FileTransferError(
-            "artifact_write_failed", "Artifact write checksum did not match streamed bytes"
-        )
-    finalized = write_result.get("finalized")
-    if finalized is False:
-        raise FileTransferError("artifact_write_failed", "Artifact write was not finalized")
-    return artifact_handle
-
-
-def _input_artifact_handle(input_payload: dict[str, Any]) -> str:
-    value = input_payload.get("artifact_handle") or input_payload.get("artifact_id")
-    if isinstance(value, dict):
-        value = value.get("artifact_handle") or value.get("artifact_id")
-    handle = _as_str(value)
-    if not handle:
-        raise FileTransferError("invalid_payload", "artifact_handle is required")
-    return handle
-
-
-def _handle_upload_file(payload: dict[str, Any], config: ConnectionConfig) -> dict[str, Any]:
-    input_payload = _input_payload(payload)
-    artifact_handle = _input_artifact_handle(input_payload)
-    remote_path = _validate_root_relative_path(input_payload.get("remote_path"), allow_empty=False)
-    overwrite = _as_bool(input_payload.get("overwrite"), default=False)
-    try:
-        artifact_limit = _artifact_input_limit(payload, artifact_handle=artifact_handle)
-    except ArtifactAccessError as exc:
-        raise FileTransferError("artifact_read_failed", str(exc)) from exc
-    max_bytes = _effective_max_bytes(input_payload, artifact_limit)
-    try:
-        artifact_size = _artifact_input_size(payload, artifact_handle=artifact_handle)
-        if artifact_size is not None and artifact_size > max_bytes:
-            raise FileTransferError("max_bytes_exceeded", "Artifact exceeds max_bytes")
-        artifact_stream = stream_artifact_bytes(
-            payload,
-            artifact_id=artifact_handle,
-            binding_key=UPLOAD_ARTIFACT_BINDING_KEY,
-            chunk_size=STREAM_CHUNK_BYTES,
-            timeout_seconds=config.read_timeout,
-        )
-    except ArtifactAccessError as exc:
-        raise FileTransferError("artifact_read_failed", str(exc)) from exc
-    chunks, state = _hashing_chunks(
-        artifact_stream,
-        max_bytes=max_bytes,
-        progress=_transfer_progress("Uploading", _basename(remote_path), total_bytes=artifact_size),
-    )
-    try:
-        with _client_for(config) as client:
-            result = client.upload_file(remote_path, chunks, overwrite=overwrite)
-    except ArtifactAccessError as exc:
-        raise FileTransferError("artifact_read_failed", str(exc)) from exc
-    return {
-        "ok": True,
-        "result": {
-            "uploaded": True,
-            "remote_path": remote_path,
-            "sha256": state["sha256"].hexdigest(),
-            "size_bytes": state["size_bytes"],
-            "overwrite_protection": result.get("overwrite_protection") or "best_effort",
-            "external_effect_status": "succeeded",
-        },
-        "external_effect_status": "succeeded",
-    }
-
-
-def _suppressed_upload_response() -> dict[str, Any]:
-    return {
-        "ok": True,
-        "result": {
-            "uploaded": False,
-            "external_effect_status": "suppressed",
-            "definitely_no_external_effect": True,
-        },
-        "external_effect_status": "suppressed",
-        "definitely_no_external_effect": True,
-    }
-
-
-def _failure_response(code: str, message: str, **fields: Any) -> dict[str, Any]:
-    return {
-        "ok": False,
-        "error_code": code,
-        "error": message,
-        "errors": [{"code": code, "message": message}],
-        **fields,
-    }
-
-
-def handle_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    redaction_payload = payload if isinstance(payload, dict) else {}
-    try:
-        if not isinstance(payload, dict):
-            raise FileTransferError("invalid_payload", "Request payload must be a JSON object")
-        operation = _operation_id(payload)
-        runtime_context = _as_dict(payload.get("runtime_context"))
-        if operation == "upload_file" and _as_bool(runtime_context.get("test_mode")):
-            return _suppressed_upload_response()
-        if operation == "discover_host_key":
-            return _handle_discover_host_key(payload)
-        config = _connection_config(payload)
-        if operation == "test_connection":
-            return _handle_test_connection(config)
-        if operation == "list_files":
-            return _handle_list_files(payload, config)
-        if operation == "fetch_file":
-            return _handle_fetch_file(payload, config)
-        if operation == "upload_file":
-            return _handle_upload_file(payload, config)
-        raise FileTransferError("unknown_action", "Unsupported file transfer action")
-    except (PinnedPeerError, TimeoutError) as exc:
-        return _failure_response(
-            "network_blocked",
-            _redact_error(exc, redaction_payload),
-            definitely_no_external_effect=True,
-            external_effect_status="failed",
-        )
-    except FileTransferError as exc:
-        payload_out = _failure_response(
-            exc.code,
-            _redact_error(exc, redaction_payload),
-            definitely_no_external_effect=exc.definitely_no_external_effect,
-        )
-        if exc.external_effect_status:
-            payload_out["external_effect_status"] = exc.external_effect_status
-        elif exc.definitely_no_external_effect:
-            payload_out["external_effect_status"] = "failed"
-        return payload_out
-    except Exception as exc:
-        return _failure_response(
-            "transfer_failed",
-            _redact_error(exc, redaction_payload),
-            definitely_no_external_effect=False,
-            external_effect_status="timeout_unknown",
-        )

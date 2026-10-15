@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""FTP/FTPS/SFTP file transfer extension subprocess entrypoint."""
+"""File Transfer subprocess entrypoint: JSON in, JSON out, nothing else."""
 
 from __future__ import annotations
 
 import json
 import sys
 
-import file_transfer_extension
+import file_operations
 
 
 def main() -> int:
@@ -46,7 +46,7 @@ def main() -> int:
             )
         )
         return 2
-    response = file_transfer_extension.handle_payload(payload)
+    response = file_operations.handle_payload(payload)
     print(json.dumps(response, sort_keys=True))
     return 0 if response.get("ok") else 2
 

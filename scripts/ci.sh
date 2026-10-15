@@ -45,10 +45,10 @@ check_local_requirement_files requirements-dev.txt
 "${PYTHON_BIN}" -m pip install -r requirements-dev.txt
 
 "${PYTHON_BIN}" scripts/validate_bundle.py
-"${PYTHON_BIN}" -m compileall -q file_transfer_extension.py health.py main.py tests scripts
+"${PYTHON_BIN}" -m compileall -q file_transfer_extension.py file_operations.py file_connections.py file_errors.py connection_factory.py connections health.py main.py tests scripts
 "${PYTHON_BIN}" -m ruff check .
 "${PYTHON_BIN}" -m ruff format --check .
-"${PYTHON_BIN}" -m mypy file_transfer_extension.py health.py main.py tests scripts
-"${PYTHON_BIN}" -m bandit -q -r file_transfer_extension.py health.py main.py
+"${PYTHON_BIN}" -m mypy file_transfer_extension.py file_operations.py file_connections.py file_errors.py connection_factory.py connections health.py main.py tests scripts
+"${PYTHON_BIN}" -m bandit -q -r file_transfer_extension.py file_operations.py file_connections.py file_errors.py connection_factory.py connections health.py main.py
 "${PYTHON_BIN}" -m pip_audit -r requirements.in
 "${PYTHON_BIN}" -m pytest -q tests
