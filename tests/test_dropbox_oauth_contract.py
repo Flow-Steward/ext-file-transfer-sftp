@@ -89,22 +89,22 @@ def test_oauth_callback_is_declared_and_not_connection_scoped():
     ]
 
 
-def test_accounts_connect_on_a_page_other_than_the_setup_page():
-    # Core renders an OAuth connection form only on pages that are not the
-    # provider's setup_page_id; the setup page shows the app configuration.
-    setup_page_id = _provider()["setup_page_id"]
-    accounts = _yaml("ui/pages/dropbox.yaml")
-    setup = _yaml("ui/pages/dropbox-setup.yaml")
-    (form,) = [row for row in accounts["components"] if row["type"] == "connection_form"]
+def test_app_setup_and_account_connect_share_one_dropbox_page():
+    # Core renders the app configuration and the account Connect form together
+    # when the provider's setup_page_id itself declares the connection form.
+    provider = _provider()
+    page = _yaml("ui/pages/dropbox.yaml")
+    (form,) = [row for row in page["components"] if row["type"] == "connection_form"]
+    anchors = {row["anchor_id"] for row in page["components"] if "anchor_id" in row}
 
-    assert setup["page_id"] == setup_page_id == "dropbox-setup"
-    assert accounts["page_id"] != setup_page_id
+    assert page["page_id"] == provider["setup_page_id"] == provider["help_page_id"] == "dropbox"
     assert form["data"] == {
         "oauth_provider_id": "dropbox_oauth",
         "connection_type": "dropbox",
         "oauth_intent": "dropbox_connect",
     }
-    assert not [row for row in setup["components"] if row["type"] == "connection_form"]
+    assert set(provider["error_help_anchors"].values()) <= anchors
     manifest = (BUNDLE_ROOT / "ui/ui_manifest.yaml").read_text()
     assert "ref: pages/dropbox.yaml" in manifest
-    assert "ref: pages/dropbox-setup.yaml" in manifest
+    assert "dropbox-setup" not in manifest
+    assert not (BUNDLE_ROOT / "ui/pages/dropbox-setup.yaml").exists()

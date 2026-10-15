@@ -2,4 +2,3 @@ version: "1"
 pages:
   - ref: pages/overview.yaml
   - ref: pages/dropbox.yaml
-  - ref: pages/dropbox-setup.yaml

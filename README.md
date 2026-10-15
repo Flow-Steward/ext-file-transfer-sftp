@@ -122,9 +122,9 @@ Dropbox uses a Dropbox app that belongs to the project. Create it in the Dropbox
 App Console with **Scoped access** and enable exactly `files.metadata.read`,
 `files.content.read` and `files.content.write`. Choose **Full Dropbox** to work
 with files already in the account; **App folder** limits every path to the
-app's own folder. Add the callback URI shown on the extension's setup form as a
-redirect URI, and paste the App key and App secret into the setup form. The
-extension's Dropbox tab then connects accounts with Authorization Code + PKCE.
+app's own folder. On the extension's Dropbox tab, add the OAuth Redirect URI
+shown there as a redirect URI and save the App key and App secret; the same tab
+then connects accounts with Authorization Code + PKCE.
 
 Core keeps the refresh token and the app secret; each operation receives only
 the selected account's current access token, so connections and accounts never
