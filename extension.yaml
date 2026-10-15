@@ -2,10 +2,10 @@ manifest_version: 2
 lifecycle: {data_schema_version: 1, data_migrations: []}
 extension_id: flowsteward.file-transfer
 kind: tool_provider
-version: 0.1.7
+version: 0.2.0
 display_name: File Transfer
-description: Streams opaque files over FTP, explicit FTPS, and SFTP using Flow Steward
-  artifact grants.
+description: Streams opaque files over FTP, explicit FTPS, SFTP and Dropbox using Flow
+  Steward artifact grants.
 vendor:
   name: Flow Steward
   support_url: https://github.com/Flow-Steward/ext-file-transfer-sftp/issues
@@ -17,7 +17,8 @@ listing:
   - ftp
   - ftps
   - sftp
-  summary: Move files over FTP, FTPS, and SFTP using Flow Steward artifact grants.
+  - dropbox
+  summary: Move files over FTP, FTPS, SFTP and Dropbox using Flow Steward artifact grants.
 features:
 - tool
 - action
@@ -25,6 +26,7 @@ supported_url_schemes:
 - ftp
 - ftps
 - sftp
+- https
 required_scopes:
 - extension:invoke
 - artifact:read
@@ -59,8 +61,8 @@ schemas:
     - ok
 account_scope:
   scope_type: project
-  description: FTP/FTPS/SFTP connections are project-scoped and keep secret values
-    in encrypted connection secrets.
+  description: File connections are project-scoped; passwords and keys stay in encrypted
+    connection secrets, and Dropbox tokens stay with Core's OAuth store.
 external_effects:
 - operation_id: upload_file
   effect_kind: file_delivery
@@ -69,6 +71,31 @@ external_effects:
   test_mode_behavior: suppress
 runtime:
   extension_contract_v2:
+    oauth_providers:
+    - provider_id: dropbox_oauth
+      display_name: Dropbox
+      description: A project-owned Dropbox app and the Dropbox accounts authorized through it.
+      setup_page_id: dropbox-setup
+      help_page_id: dropbox-setup
+      error_help_anchors:
+        invalid_client: app-credentials
+        authorization_required: authorize-again
+        authorization_denied: authorize-again
+      flow: {type: authorization_code, pkce: s256}
+      credential_fields:
+      - {field_id: client_id, value_type: text, required: true, secret: false, browser_exposable: true,
+        change_policy: reauthorization_required, label: Dropbox App key, help_text: Enter the App
+          key from the Dropbox App Console., autocomplete: username, validation: {min_length: 1,
+          max_length: 512}}
+      - {field_id: client_secret, value_type: secret, required: true, secret: true, change_policy: runtime_revalidate,
+        label: Dropbox App secret, help_text: Enter the matching App secret from the Dropbox App
+          Console., autocomplete: current-password, validation: {min_length: 1, max_length: 4096}}
+      authorization_endpoint: {url: 'https://www.dropbox.com/oauth2/authorize'}
+      token_endpoint: {url: 'https://api.dropboxapi.com/oauth2/token', client_auth_method: client_secret_post}
+      callback_id: oauth_authorization
+      authorization_intents:
+      - intent_id: dropbox_connect
+        static_parameters: {token_access_type: offline}
     connection_types: contracts/connection_types.yaml
     operation_manifest: contracts/operation_manifest.yaml
     artifact_policies: contracts/artifact_policies.yaml
@@ -109,6 +136,8 @@ health:
   - health.py
   timeout_seconds: 5
 ui_manifest: ui/ui_manifest.yaml
+callbacks:
+- {callback_id: oauth_authorization, purpose: oauth_authorization, methods: [GET], connection_scoped: false}
 action_manifest: ui/actions/actions.yaml
 python_requirements:
 - name: bcrypt

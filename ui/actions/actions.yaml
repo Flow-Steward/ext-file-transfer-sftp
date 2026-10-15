@@ -21,9 +21,15 @@ actions:
       - unsupported_host_key
       - network_blocked
       - transfer_failed
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - action_id: test_connection
     title: Test File Transfer Connection
-    description: Validate that the selected FTP/FTPS/SFTP connection can be reached and rooted safely.
+    description: Validate that the selected connection can be reached and its configured root can be read.
     required_scopes:
       - extension:invoke
     handler:
@@ -50,9 +56,15 @@ actions:
       - invalid_passive_port
       - metadata_unknown
       - transfer_failed
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - action_id: list_files
     title: List Files
-    description: List bounded FTP/FTPS/SFTP directory entries without downloading file bodies.
+    description: List the regular files of one directory, bounded to 500 raw entries, without downloading file bodies.
     required_scopes:
       - extension:invoke
     handler:
@@ -90,9 +102,15 @@ actions:
       - invalid_passive_port
       - metadata_unknown
       - transfer_failed
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - action_id: fetch_file
     title: Fetch File
-    description: Stream one selected FTP/FTPS/SFTP file into a host-created artifact.
+    description: Stream one selected remote file into a host-created artifact.
     required_scopes:
       - extension:invoke
       - artifact:read
@@ -143,9 +161,14 @@ actions:
       - max_bytes_exceeded
       - artifact_write_failed
       - transfer_failed
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - action_id: upload_file
     title: Upload File
-    description: Stream one host artifact to an FTP/FTPS/SFTP path through a temporary same-directory object.
+    description: Stream one host artifact to a remote path; an existing file is replaced only with overwrite.
     required_scopes:
       - extension:invoke
       - artifact:read
@@ -195,3 +218,9 @@ actions:
       - artifact_read_failed
       - transfer_failed
       - timeout_unknown
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout

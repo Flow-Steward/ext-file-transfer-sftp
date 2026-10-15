@@ -23,10 +23,16 @@ operations:
       - unsupported_host_key
       - network_blocked
       - transfer_failed
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - operation_id: test_connection
     workflow_visible: false
     display_name: Test Connection
-    description: Validate that the selected FTP/FTPS/SFTP connection is reachable and rooted safely.
+    description: Validate that the selected connection is reachable and its configured root can be read.
     operation_kind: action
     category: file_transfer
     inputs:
@@ -54,12 +60,19 @@ operations:
       - invalid_passive_port
       - metadata_unknown
       - transfer_failed
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - operation_id: list_files
     connection_type_ids:
       - ftp
       - sftp
+      - dropbox
     display_name: List Files
-    description: List bounded FTP/FTPS/SFTP directory entries without reading file bodies.
+    description: List the regular files of one directory, bounded to 500 raw entries, without reading file bodies.
     operation_kind: source
     category: file_transfer
     inputs:
@@ -98,10 +111,17 @@ operations:
       - invalid_passive_port
       - metadata_unknown
       - transfer_failed
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - operation_id: fetch_file
     connection_type_ids:
       - ftp
       - sftp
+      - dropbox
     display_name: Fetch File
     description: Stream one selected remote file into a host-created artifact named download.bin.
     operation_kind: source
@@ -160,12 +180,18 @@ operations:
       - max_bytes_exceeded
       - artifact_write_failed
       - transfer_failed
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout
   - operation_id: upload_file
     connection_type_ids:
       - ftp
       - sftp
+      - dropbox
     display_name: Upload File
-    description: Stream one host artifact to a remote FTP/FTPS/SFTP path through a temporary same-directory object.
+    description: Stream one host artifact to a remote path; an existing file is replaced only with overwrite.
     operation_kind: action
     category: file_transfer
     inputs:
@@ -219,3 +245,9 @@ operations:
       - artifact_read_failed
       - transfer_failed
       - timeout_unknown
+      - not_found
+      - authorization_required
+      - permission_denied
+      - rate_limited
+      - provider_unavailable
+      - timeout

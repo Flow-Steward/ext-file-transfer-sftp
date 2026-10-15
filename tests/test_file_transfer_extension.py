@@ -116,17 +116,18 @@ class FakeClient:
         return {"overwrite_protection": "best_effort"}
 
 
-def test_manifest_scope_contract_has_no_http_or_artifact_write():
+def test_manifest_scope_contract_has_no_artifact_write():
     import yaml
 
     bundle_root = Path(__file__).resolve().parents[1]
     manifest = yaml.safe_load((bundle_root / "extension.yaml").read_text())
     actions = yaml.safe_load((bundle_root / "ui/actions/actions.yaml").read_text())["actions"]
     page = yaml.safe_load((bundle_root / "ui/pages/overview.yaml").read_text())
+    connection_types = yaml.safe_load((bundle_root / "contracts/connection_types.yaml").read_text())
     assert manifest["extension_id"] == "flowsteward.file-transfer"
     assert manifest["kind"] == "tool_provider"
     assert set(manifest["features"]) == {"tool", "action"}
-    assert set(manifest["supported_url_schemes"]) == {"ftp", "ftps", "sftp"}
+    assert set(manifest["supported_url_schemes"]) == {"ftp", "ftps", "sftp", "https"}
     assert manifest["required_scopes"] == ["extension:invoke", "artifact:read"]
     assert {row["action_id"] for row in actions} >= {
         "discover_host_key",
@@ -138,8 +139,8 @@ def test_manifest_scope_contract_has_no_http_or_artifact_write():
     assert "../components/file_transfer_connection_form.yaml" in {
         row["ref"] for row in page["components"]
     }
-    text = (bundle_root / "contracts/connection_types.yaml").read_text()
-    assert "http" not in text.lower()
+    type_ids = [row["connection_type_id"] for row in connection_types["connection_types"]]
+    assert type_ids == ["ftp", "sftp", "dropbox"]
     assert "artifact:write" not in str(manifest)
     assert any(row["name"] == "paramiko" for row in manifest["python_requirements"])
     assert (bundle_root / "wheels" / "paramiko-5.0.0-py3-none-any.whl").is_file()

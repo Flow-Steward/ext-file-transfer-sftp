@@ -139,3 +139,36 @@ connection_types:
       requires_pinned_peer: true
       requires_host_key_fingerprint: true
       disables_agent_and_local_key_discovery: true
+  - connection_type_id: dropbox
+    display_name: Dropbox
+    description: One Dropbox account authorized in this project to list, read and write files below its root folder.
+    auth:
+      type: oauth2
+      provider_id: dropbox_oauth
+      scopes:
+        required: [files.metadata.read, files.content.read, files.content.write]
+        optional: []
+    config_schema:
+      type: object
+      additionalProperties: false
+      properties:
+        root_path:
+          type: string
+          default: "."
+          title: Root folder
+          description: Folder inside the Dropbox app's access that every path is relative to. "." is the top.
+    secret_schema:
+      type: object
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+    capabilities:
+      test_connection: true
+      list_files: true
+      fetch_file: true
+      upload_file: true
+    safety_profile:
+      protocol: https
+      fixed_origins: [https://api.dropboxapi.com, https://content.dropboxapi.com]
+      requires_pinned_peer: true
