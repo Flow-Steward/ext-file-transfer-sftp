@@ -102,7 +102,7 @@ def _open_uploads(target: dict[str, Any]) -> list[Any]:
 
 def _payload(target: dict[str, Any], operation: str, input_payload: dict[str, Any], **extra):
     payload = {
-        "contract_version": "extension_host_v1",
+        "contract_version": "extension_host_v2",
         "runtime_context": {},
         "action": {
             "action_id": operation,

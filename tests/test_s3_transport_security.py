@@ -53,7 +53,7 @@ def _payload(server: FakeS3, operation: str = "list_files", **overrides: Any) ->
         "secrets", {"access_key_id": "AKIAEXPLICIT", "secret_access_key": "explicit-secret"}
     )
     return {
-        "contract_version": "extension_host_v1",
+        "contract_version": "extension_host_v2",
         "runtime_context": {},
         "action": {
             "action_id": operation,

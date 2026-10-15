@@ -48,7 +48,7 @@ def _payload(
     base_secrets = {"username": "user", "password": "secret"}
     base_secrets.update(secrets or {})
     payload = {
-        "contract_version": "extension_host_v1",
+        "contract_version": "extension_host_v2",
         "runtime_context": runtime_context or {},
         "action": {
             "action_id": operation,
@@ -920,7 +920,7 @@ def test_sftp_host_key_discovery_does_not_authenticate(monkeypatch):
 
     response = ops.handle_payload(
         {
-            "contract_version": "extension_host_v1",
+            "contract_version": "extension_host_v2",
             "action": {
                 "action_id": "discover_host_key",
                 "target": {

@@ -67,6 +67,14 @@ account_scope:
   scope_type: project
   description: File connections are project-scoped; passwords and keys stay in encrypted
     connection secrets, and Dropbox tokens stay with Core's OAuth store.
+egress:
+  hosts:
+  - api.dropboxapi.com
+  - content.dropboxapi.com
+  connection_fields:
+  - ftp.host
+  - sftp.host
+  - s3.endpoint_url
 external_effects:
 - operation_id: upload_file
   effect_kind: file_delivery
@@ -74,6 +82,7 @@ external_effects:
   idempotency: required
   test_mode_behavior: suppress
 runtime:
+  contract_version: extension_host_v2
   extension_contract_v2:
     oauth_providers:
     - provider_id: dropbox_oauth

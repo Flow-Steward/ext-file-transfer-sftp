@@ -130,7 +130,7 @@ def _install(monkeypatch, fake: FakeConnection) -> None:
 
 def _payload(operation: str, input_payload: dict[str, Any], **extra: Any) -> dict[str, Any]:
     payload: dict[str, Any] = {
-        "contract_version": "extension_host_v1",
+        "contract_version": "extension_host_v2",
         "runtime_context": extra.pop("runtime_context", {}),
         "action": {
             "action_id": operation,

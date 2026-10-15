@@ -4,13 +4,20 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import importlib.util
 import zipfile
 from pathlib import Path
 
 import pytest
 import yaml
 
-from scripts import verify_distribution as vd
+_SPEC = importlib.util.spec_from_file_location(
+    "verify_distribution",
+    Path(__file__).resolve().parents[1] / ".github/scripts/verify_distribution.py",
+)
+assert _SPEC is not None and _SPEC.loader is not None
+vd = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(vd)
 
 BUNDLE_ROOT = Path(__file__).resolve().parents[1]
 NATIVE = {

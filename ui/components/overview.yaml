@@ -3,4 +3,6 @@ type: markdown
 component_type: markdown
 title: File Transfer
 content: |
-  FTP/FTPS/SFTP transfer operations are exposed to workflows through connector steps.
+  List Files, Download File and Upload File work the same way for every connection:
+  FTP/FTPS, SFTP and S3-compatible storage (set up above) and Dropbox (on the Dropbox tab).
+  Files move as artifacts between workflow steps; their contents never enter workflow state.

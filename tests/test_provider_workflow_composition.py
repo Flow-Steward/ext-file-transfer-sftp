@@ -183,7 +183,7 @@ def _runner(
 
     def _run_action(extension, action_id, input_payload, **kwargs):
         payload = {
-            "contract_version": "extension_host_v1",
+            "contract_version": "extension_host_v2",
             "runtime_context": {},
             "action": {
                 "action_id": action_id,
@@ -299,7 +299,7 @@ def test_fetch_handle_uploads_across_connection_types(tmp_path, providers, sourc
 @pytest.mark.parametrize("kind", ["ftp", "sftp", "s3", "dropbox"])
 def test_test_mode_upload_changes_nothing_for_every_connection_type(tmp_path, providers, kind):
     payload = {
-        "contract_version": "extension_host_v1",
+        "contract_version": "extension_host_v2",
         "runtime_context": {"test_mode": True},
         "action": {
             "action_id": "upload_file",

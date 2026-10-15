@@ -55,7 +55,7 @@ def _payload(
         **overrides.pop("secrets", {}),
     }
     payload: dict[str, Any] = {
-        "contract_version": "extension_host_v1",
+        "contract_version": "extension_host_v2",
         "runtime_context": {},
         "action": {
             "action_id": operation,

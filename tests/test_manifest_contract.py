@@ -118,3 +118,17 @@ def test_new_failure_codes_are_declared_for_workflow_operations():
         } <= codes
     assert "timeout_unknown" in operations["upload_file"]["error_codes"]
     assert "already_exists" in operations["upload_file"]["error_codes"]
+
+
+def test_release_declares_the_host_contract_core_invokes():
+    # Core never invokes a release that does not name extension_host_v2.
+    assert _yaml("extension.yaml")["runtime"]["contract_version"] == "extension_host_v2"
+
+
+def test_egress_names_every_destination():
+    egress = _yaml("extension.yaml")["egress"]
+
+    assert egress == {
+        "hosts": ["api.dropboxapi.com", "content.dropboxapi.com"],
+        "connection_fields": ["ftp.host", "sftp.host", "s3.endpoint_url"],
+    }
