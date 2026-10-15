@@ -1,16 +1,8 @@
 page_id: dropbox-setup
-title: Dropbox
-description: Configure this project's Dropbox app, then connect Dropbox accounts.
+title: Dropbox setup
+description: Configure this project's Dropbox app; connect accounts on the Dropbox tab.
 project_scoped: true
 components:
-  - component_id: dropbox_oauth_connections
-    type: connection_form
-    title: Dropbox accounts
-    description: Each connected account is used only by the workflow steps that select it.
-    data:
-      oauth_provider_id: dropbox_oauth
-      connection_type: dropbox
-      oauth_intent: dropbox_connect
   - component_id: dropbox_setup_guide
     type: markdown
     title: Dropbox setup guide
@@ -25,7 +17,7 @@ components:
 
       **Connect an account**
 
-      Use **Dropbox accounts** above. Dropbox asks the account owner to approve the app; Flow Steward keeps the long-lived refresh token and gives each workflow step only a short-lived access token for the account that step selected.
+      Open the **Dropbox** tab and use **Dropbox accounts**. Dropbox asks the account owner to approve the app; Flow Steward keeps the long-lived refresh token and gives each workflow step only a short-lived access token for the account that step selected.
 
       **What the connection does**
 

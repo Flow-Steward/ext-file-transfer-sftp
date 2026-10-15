@@ -1,0 +1,18 @@
+page_id: dropbox
+title: Dropbox
+description: Connect Dropbox accounts through this project's Dropbox app.
+project_scoped: true
+components:
+  - component_id: dropbox_oauth_connections
+    type: connection_form
+    title: Dropbox accounts
+    description: Each connected account is used only by the workflow steps that select it.
+    data:
+      oauth_provider_id: dropbox_oauth
+      connection_type: dropbox
+      oauth_intent: dropbox_connect
+  - component_id: dropbox_connect_notes
+    type: markdown
+    title: Before you connect
+    body: |
+      A project administrator first saves the Dropbox app's key and secret on the **Dropbox setup** tab. Each account connected here is used only by the workflow steps that select it, and only inside the folder the Dropbox app may reach.

@@ -89,13 +89,22 @@ def test_oauth_callback_is_declared_and_not_connection_scoped():
     ]
 
 
-def test_setup_page_connects_with_the_declared_intent():
-    page = _yaml("ui/pages/dropbox-setup.yaml")
-    (form,) = [row for row in page["components"] if row["type"] == "connection_form"]
+def test_accounts_connect_on_a_page_other_than_the_setup_page():
+    # Core renders an OAuth connection form only on pages that are not the
+    # provider's setup_page_id; the setup page shows the app configuration.
+    setup_page_id = _provider()["setup_page_id"]
+    accounts = _yaml("ui/pages/dropbox.yaml")
+    setup = _yaml("ui/pages/dropbox-setup.yaml")
+    (form,) = [row for row in accounts["components"] if row["type"] == "connection_form"]
 
+    assert setup["page_id"] == setup_page_id == "dropbox-setup"
+    assert accounts["page_id"] != setup_page_id
     assert form["data"] == {
         "oauth_provider_id": "dropbox_oauth",
         "connection_type": "dropbox",
         "oauth_intent": "dropbox_connect",
     }
-    assert "ref: pages/dropbox-setup.yaml" in (BUNDLE_ROOT / "ui/ui_manifest.yaml").read_text()
+    assert not [row for row in setup["components"] if row["type"] == "connection_form"]
+    manifest = (BUNDLE_ROOT / "ui/ui_manifest.yaml").read_text()
+    assert "ref: pages/dropbox.yaml" in manifest
+    assert "ref: pages/dropbox-setup.yaml" in manifest
