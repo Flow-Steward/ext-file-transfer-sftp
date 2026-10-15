@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import file_transfer_extension as protocol
+from connections.dropbox import open_dropbox
 from connections.ftp import FTPConnection
 from connections.sftp import SFTPConnection
 from file_connections import Deadline, FileConnection
@@ -40,6 +41,17 @@ def _test_protocol_client(payload: dict[str, Any], deadline: Deadline) -> dict[s
         }
 
 
+@contextmanager
+def _open_dropbox(payload: dict[str, Any], deadline: Deadline) -> Iterator[FileConnection]:
+    # Stateless between requests: every request opens and closes its own pinned connection.
+    yield open_dropbox(payload, deadline)
+
+
+def _test_dropbox(payload: dict[str, Any], deadline: Deadline) -> dict[str, Any]:
+    open_dropbox(payload, deadline).check_root()
+    return {"protocol": "dropbox", "use_tls": None}
+
+
 @dataclass(frozen=True)
 class _ConnectionType:
     open: Callable[[dict[str, Any], Deadline], AbstractContextManager[FileConnection]]
@@ -53,6 +65,7 @@ _CONNECTION_TYPES: dict[str, _ConnectionType] = {
     "ftps": _PROTOCOL_CLIENT,
     "ftp_tls": _PROTOCOL_CLIENT,
     "sftp": _PROTOCOL_CLIENT,
+    "dropbox": _ConnectionType(open=_open_dropbox, test=_test_dropbox),
 }
 
 
@@ -60,7 +73,9 @@ def _connection_type(payload: dict[str, Any]) -> _ConnectionType:
     type_id = protocol._connection_type_id(payload)
     kind = _CONNECTION_TYPES.get(type_id)
     if kind is None:
-        raise FileTransferError("invalid_connection", "Connection type must be ftp or sftp")
+        raise FileTransferError(
+            "invalid_connection", "Connection type must be ftp, sftp or dropbox"
+        )
     return kind
 
 
