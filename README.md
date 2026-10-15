@@ -110,9 +110,11 @@ for temporary credentials, a session token.
 - **Permissions needed:** list the bucket under the prefix, read objects, and
   for uploads write objects and abort the extension's own multipart uploads.
 
-Release targets: AWS S3 general-purpose buckets (not Express One Zone or
-Outposts) and MinIO, with path and virtual-host addressing. Other S3-compatible
-services are not verified.
+Verified for this release, with path and virtual-host addressing and the
+conditional create: MinIO (built from commit 9e49d5e7) and Tigris through
+Railway Buckets. AWS S3 general-purpose buckets are the intended target but were
+not run against for this release; every other S3-compatible service is
+unverified, so run tests/test_s3_protocol_integration.py against it first.
 
 ## Dropbox
 
