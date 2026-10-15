@@ -101,7 +101,7 @@ def _upload(server: FakeS3, monkeypatch, body: bytes, **kwargs: Any) -> dict[str
                     "artifact_handle": "art_in",
                     "binding_key": "source_artifact",
                     "size_bytes": declared,
-                    "access": {"download_url": "file:///dev/null"},
+                    "access": {"download_url": "file:///dev/null", "max_size_bytes": declared},
                 }
             ]
         },

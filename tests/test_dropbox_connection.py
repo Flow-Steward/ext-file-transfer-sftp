@@ -205,7 +205,7 @@ def _upload(monkeypatch, body: bytes, remote_path: str = "out/a.bin", **kwargs: 
                     "artifact_handle": "art_in",
                     "binding_key": "source_artifact",
                     "size_bytes": len(body),
-                    "access": {"download_url": "file:///dev/null"},
+                    "access": {"download_url": "file:///dev/null", "max_size_bytes": len(body)},
                 }
             ]
         },
@@ -600,7 +600,7 @@ def test_truncated_artifact_never_reaches_finish(fake, monkeypatch):
                     "artifact_handle": "art_in",
                     "binding_key": "source_artifact",
                     "size_bytes": len(body),
-                    "access": {"download_url": "file:///dev/null"},
+                    "access": {"download_url": "file:///dev/null", "max_size_bytes": len(body)},
                 }
             ]
         },

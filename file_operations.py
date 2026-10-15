@@ -124,6 +124,25 @@ def _artifact_input_size(payload: dict[str, Any], *, artifact_handle: str) -> in
     return None
 
 
+def _signed_source_size(payload: dict[str, Any], *, artifact_handle: str) -> int | None:
+    """The input's byte size, but only when the signed grant vouches for it.
+
+    Core signs an input grant with ``access.max_size_bytes`` set to the stored
+    artifact's exact size; ``size_bytes`` alone is unsigned descriptor metadata
+    (a test harness leaves it at 0 after a streamed write). A size the grant
+    does not confirm is unknown, never assumed.
+    """
+    descriptor = find_artifact_descriptor(
+        payload,
+        artifact_id=artifact_handle,
+        binding_key=UPLOAD_ARTIFACT_BINDING_KEY,
+        role="input",
+    )
+    size = _artifact_input_size(payload, artifact_handle=artifact_handle)
+    signed = protocol._as_int(protocol._as_dict(descriptor.get("access")).get("max_size_bytes"), -1)
+    return size if size is not None and size == signed else None
+
+
 def _artifact_input_limit(payload: dict[str, Any], *, artifact_handle: str) -> int | None:
     descriptor = find_artifact_descriptor(
         payload,
@@ -490,6 +509,7 @@ def _handle_upload_file(payload: dict[str, Any], deadline: Deadline) -> dict[str
     max_bytes = _effective_max_bytes(input_payload, artifact_limit)
     try:
         artifact_size = _artifact_input_size(payload, artifact_handle=artifact_handle)
+        source_size = _signed_source_size(payload, artifact_handle=artifact_handle)
         if artifact_size is not None and artifact_size > max_bytes:
             raise FileTransferError("max_bytes_exceeded", "Artifact exceeds max_bytes")
         artifact_stream = stream_artifact_bytes(
@@ -507,12 +527,10 @@ def _handle_upload_file(payload: dict[str, Any], deadline: Deadline) -> dict[str
         progress=_transfer_progress(
             "Uploading", protocol._basename(remote_path), total_bytes=artifact_size
         ),
-        expected_size=artifact_size,
+        expected_size=source_size,
         deadline=deadline,
     )
-    options = UploadOptions(
-        overwrite=overwrite, max_bytes=max_bytes, source_size_bytes=artifact_size
-    )
+    options = UploadOptions(overwrite=overwrite, max_bytes=max_bytes, source_size_bytes=source_size)
     try:
         with open_file_connection(payload, deadline=deadline) as connection:
             result = connection.upload_file(remote_path, chunks, options)

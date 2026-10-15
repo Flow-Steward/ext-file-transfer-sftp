@@ -157,6 +157,7 @@ def _upload_payload(size_bytes: int | None, **input_extra: Any) -> dict[str, Any
     }
     if size_bytes is not None:
         descriptor["size_bytes"] = size_bytes
+        descriptor["access"]["max_size_bytes"] = size_bytes  # Core signs the exact size
     return _payload(
         "upload_file",
         {"artifact_handle": "art_in", "remote_path": "out/report.csv", **input_extra},
@@ -442,14 +443,18 @@ def test_upload_passes_trusted_options_and_reports_commit(monkeypatch, connectio
     assert connection.closed is True
 
 
-@pytest.mark.parametrize("chunks", [[b"ab"], [b"abcd", b"ef"]])
-def test_truncated_source_does_not_commit_upload(monkeypatch, connection, chunks):
+@pytest.mark.parametrize(
+    ("chunks", "code"),
+    [([b"ab"], "artifact_read_failed"), ([b"abcd", b"ef"], "max_bytes_exceeded")],
+)
+def test_truncated_source_does_not_commit_upload(monkeypatch, connection, chunks, code):
+    # A short stream fails its signed size; a padded one hits the grant's byte limit.
     monkeypatch.setattr(ops, "stream_artifact_bytes", lambda *a, **k: iter(chunks))
 
     response = ops.handle_payload(_upload_payload(4))
 
     assert response["ok"] is False
-    assert response["error_code"] == "artifact_read_failed"
+    assert response["error_code"] == code
     assert connection.committed == {}
 
 
@@ -546,3 +551,15 @@ def test_connection_is_closed_when_the_provider_raises(monkeypatch):
 
     assert response["ok"] is False
     assert fake.closed is True
+
+
+def test_unsigned_descriptor_size_is_treated_as_unknown(monkeypatch, connection):
+    payload = _upload_payload(4)
+    del payload["artifacts"]["inputs"][0]["access"]["max_size_bytes"]
+    monkeypatch.setattr(ops, "stream_artifact_bytes", lambda *a, **k: iter([b"abcdef"]))
+
+    response = ops.handle_payload(payload)
+
+    assert response["ok"] is True
+    assert connection.upload_options[0].source_size_bytes is None
+    assert connection.committed == {"out/report.csv": b"abcdef"}
