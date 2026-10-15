@@ -1,0 +1,126 @@
+File Transfer (flowsteward.file-transfer) third-party notices
+
+The extension package bundles the Python wheels below, unmodified, as published on PyPI.
+Each package's own license files are in licenses/<name>-<version>/.
+
+aiobotocore 3.9.2
+  License: Apache-2.0
+  Source: https://github.com/aio-libs/aiobotocore
+  Files: aiobotocore-3.9.2/LICENSE
+
+aiohappyeyeballs 2.7.1
+  License: PSF-2.0
+  Source: https://github.com/aio-libs/aiohappyeyeballs
+  Files: aiohappyeyeballs-2.7.1/LICENSE
+
+aiohttp 3.14.5
+  License: Apache-2.0 AND MIT
+  Source: https://github.com/aio-libs/aiohttp
+  Files: aiohttp-3.14.5/LICENSE.txt, aiohttp-3.14.5/vendor/llhttp/LICENSE
+
+aioitertools 0.13.0
+  License: MIT
+  Files: aioitertools-0.13.0/LICENSE
+
+aiosignal 1.4.0
+  License: Apache 2.0
+  Source: https://github.com/aio-libs/aiosignal
+  Files: aiosignal-1.4.0/LICENSE
+
+attrs 26.1.0
+  License: MIT
+  Files: attrs-26.1.0/LICENSE
+
+bcrypt 5.0.0
+  License: Apache-2.0
+  Source: https://github.com/pyca/bcrypt/
+  Files: bcrypt-5.0.0/LICENSE
+
+botocore 1.43.106
+  License: Apache-2.0
+  Source: https://github.com/boto/botocore
+  Files: botocore-1.43.106/LICENSE.txt, botocore-1.43.106/NOTICE
+
+cffi 2.1.1
+  License: MIT-0
+  Source: https://github.com/python-cffi/cffi
+  Files: cffi-2.1.1/LICENSE
+
+cryptography 50.0.2
+  License: Apache-2.0 OR BSD-3-Clause
+  Source: https://github.com/pyca/cryptography
+  Files: cryptography-50.0.2/LICENSE, cryptography-50.0.2/LICENSE.APACHE, cryptography-50.0.2/LICENSE.BSD
+
+frozenlist 1.8.0
+  License: Apache-2.0
+  Source: https://github.com/aio-libs/frozenlist
+  Files: frozenlist-1.8.0/LICENSE
+
+idna 3.20
+  License: BSD-3-Clause
+  Source: https://github.com/kjd/idna
+  Files: idna-3.20/LICENSE.md
+
+invoke 3.0.3
+  License: BSD-2-Clause
+  Source: https://github.com/pyinvoke/invoke
+  Files: invoke-3.0.3/LICENSE
+
+jmespath 1.1.0
+  License: MIT
+  Source: https://github.com/jmespath/jmespath.py
+  Files: jmespath-1.1.0/LICENSE
+
+multidict 6.9.1
+  License: Apache License 2.0
+  Source: https://github.com/aio-libs/multidict
+  Files: multidict-6.9.1/LICENSE
+
+paramiko 5.0.0
+  License: LGPL-2.1
+  Source: https://github.com/paramiko/paramiko
+  Files: paramiko-5.0.0/LICENSE
+
+propcache 0.5.4
+  License: Apache-2.0
+  Source: https://github.com/aio-libs/propcache
+  Files: propcache-0.5.4/LICENSE, propcache-0.5.4/NOTICE
+
+pycparser 3.11
+  License: BSD-3-Clause
+  Source: https://github.com/eliben/pycparser
+  Files: pycparser-3.11/LICENSE
+
+PyNaCl 1.6.2
+  License: Apache-2.0
+  Source: https://github.com/pyca/pynacl/
+  Files: pynacl-1.6.2/LICENSE, pynacl-1.6.2/LICENSE.libsodium.txt
+
+python-dateutil 2.9.0.post0
+  License: Apache-2.0 AND BSD-3-Clause (dual license, see license files)
+  Source: https://github.com/dateutil/dateutil
+  Files: python_dateutil-2.9.0.post0/LICENSE
+
+six 1.17.0
+  License: MIT
+  Source: https://github.com/benjaminp/six
+  Files: six-1.17.0/LICENSE
+
+typing_extensions 4.16.0
+  License: PSF-2.0
+  Source: https://github.com/python/typing_extensions
+  Files: typing_extensions-4.16.0/LICENSE
+
+urllib3 2.8.0
+  License: MIT
+  Files: urllib3-2.8.0/LICENSE.txt
+
+wrapt 2.5.1
+  License: BSD-2-Clause
+  Source: https://github.com/GrahamDumpleton/wrapt
+  Files: wrapt-2.5.1/LICENSE
+
+yarl 1.25.1
+  License: Apache-2.0
+  Source: https://github.com/aio-libs/yarl
+  Files: yarl-1.25.1/LICENSE, yarl-1.25.1/NOTICE

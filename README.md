@@ -147,7 +147,8 @@ The extension ships as one portable Python ZIP with every dependency as a
 pinned wheel for CPython 3.12 on Linux x86_64 and aarch64; `extension.yaml`
 lists each wheel's SHA-256. Nothing is downloaded, resolved or built at install
 or run time. `requirements.in` holds the direct requirements; the SFTP closure
-stays pinned at the versions shipped in 0.1.7.
+stays at the 0.1.7 versions except `cryptography`, raised to 50.0.2 for a known
+vulnerability. `THIRD_PARTY_NOTICES` and `licenses/` cover every bundled wheel.
 
 ## Independent Release Gate
 

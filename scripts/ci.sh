@@ -50,5 +50,18 @@ check_local_requirement_files requirements-dev.txt
 "${PYTHON_BIN}" -m ruff format --check .
 "${PYTHON_BIN}" -m mypy file_transfer_extension.py file_operations.py file_connections.py file_errors.py connection_factory.py connections health.py main.py tests scripts
 "${PYTHON_BIN}" -m bandit -q -r file_transfer_extension.py file_operations.py file_connections.py file_errors.py connection_factory.py connections health.py main.py
-"${PYTHON_BIN}" -m pip_audit -r requirements.in
+# Audit the whole locked closure (every transitive wheel), not just the direct requirements.
+locked_requirements="$(mktemp)"
+trap 'rm -f "${locked_requirements}"' EXIT
+"${PYTHON_BIN}" - "${locked_requirements}" <<'PY'
+import sys
+
+import yaml
+
+with open("extension.yaml", encoding="utf-8") as handle:
+    rows = yaml.safe_load(handle).get("python_requirements") or []
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    handle.writelines(f"{row['name']}=={row['version']}\n" for row in rows)
+PY
+"${PYTHON_BIN}" -m pip_audit --disable-pip --no-deps -r "${locked_requirements}"
 "${PYTHON_BIN}" -m pytest -q tests

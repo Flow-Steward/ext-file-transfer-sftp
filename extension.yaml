@@ -6,8 +6,8 @@ extension_id: flowsteward.file-transfer
 kind: tool_provider
 version: 0.2.0
 display_name: File Transfer
-description: Streams opaque files over FTP, explicit FTPS, SFTP, S3-compatible
-  storage and Dropbox using Flow Steward artifact grants.
+description: Streams opaque files over FTP, explicit FTPS, SFTP, S3-compatible storage
+  and Dropbox using Flow Steward artifact grants.
 vendor:
   name: Flow Steward
   support_url: https://github.com/Flow-Steward/ext-file-transfer-sftp/issues
@@ -206,15 +206,15 @@ python_requirements:
   hashes:
   - sha256:c1fb8818f9957cb5037f73db34ac1a12ba43562e31d6e7f9cb7e5fc64e1dba78
 - name: cffi
-  version: 2.1.0
+  version: 2.1.1
   hashes:
-  - sha256:1e9f50d192a3e525b15a75ab5114e442d83d657b7ec29182a991bc9a88fd3a66
-  - sha256:b6422532152adf4e59b110cb2808cee7a033800952f5c036b4af047ee43199e7
+  - sha256:68e62fe11f30d5ca8289242866f0a5291402d8529ca2178ab8afc5c9694ae890
+  - sha256:c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf
 - name: cryptography
-  version: 49.0.0
+  version: 50.0.2
   hashes:
-  - sha256:0e959b578856a3924bc0cbb710fc12c387b9412a951389f3ca61704a9e25f325
-  - sha256:36d1709f992593689b45bda411498d62c6e365f2ca00b84657d4dadd24de16db
+  - sha256:630ebfea3bf689d075f82316324ff7433dc447fe6bc1bfc76524b74b4a9567d2
+  - sha256:79def8d059362e7831389ed3be0ecdf58a89386e1271e35dd9f5af84e81bffd0
 - name: frozenlist
   version: 1.8.0
   hashes:
@@ -247,9 +247,9 @@ python_requirements:
   - sha256:2814ecd8e818f487bee4b0f921bc4d1c176cc5fc71ac0f072d0fa67eda4ac14b
   - sha256:60a64cbccaa11b7760ce705a14ada17ba459e7ca9f23ba587eb013821032d7ef
 - name: pycparser
-  version: '3.0'
+  version: '3.11'
   hashes:
-  - sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
+  - sha256:51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80
 - name: pynacl
   version: 1.6.2
   hashes:

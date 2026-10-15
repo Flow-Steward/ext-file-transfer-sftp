@@ -1,10 +1,9 @@
-# SFTP: paramiko and its closure stay at the versions shipped in 0.1.7.
+# SFTP: paramiko stays at the 0.1.7 version; its closure stays pinned except
+# cryptography, raised to 50.0.2 for PYSEC-2026-3552 (fixed in 50.0.0).
 paramiko==5.0.0
 bcrypt==5.0.0
-cffi==2.1.0
-cryptography==49.0.0
+cryptography==50.0.2
 invoke==3.0.3
-pycparser==3.0
 pynacl==1.6.2
 # S3-compatible: the aiobotocore client only (no s3fs/fsspec layer).
 aiobotocore==3.9.2
