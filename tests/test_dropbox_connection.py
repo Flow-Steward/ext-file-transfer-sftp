@@ -479,6 +479,8 @@ def test_small_upload_is_one_request_with_add_mode(fake, monkeypatch):
     assert fake.routes() == ["files/get_metadata", "files/upload"]
     commit = fake.calls[-1]["arg"]
     assert commit["mode"] == "add" and commit["autorename"] is False
+    # Identical contents must still conflict when overwrite is off.
+    assert commit["strict_conflict"] is True
     assert fake.files[("tok-1", "/out/a.bin")] == b"hello"
 
 
@@ -544,6 +546,8 @@ def test_overwrite_uses_overwrite_mode(fake, monkeypatch):
 
     assert response["ok"] is True
     assert fake.files[("tok-1", "/out/a.bin")] == b"new"
+    assert fake.calls[-1]["arg"]["mode"] == "overwrite"
+    assert fake.calls[-1]["arg"]["strict_conflict"] is False
 
 
 def test_failure_before_commit_has_no_effect(fake, monkeypatch):

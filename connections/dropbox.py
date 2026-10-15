@@ -163,7 +163,10 @@ class DropboxConnection:
             "mode": "overwrite" if options.overwrite else "add",
             "autorename": False,
             "mute": True,
-            "strict_conflict": False,
+            # Without strict_conflict Dropbox treats an identical existing file as no
+            # conflict and reports success without writing; "never touch an existing
+            # file without overwrite" must hold whatever the contents are.
+            "strict_conflict": not options.overwrite,
         }
         pieces = exact_pieces(chunks, UPLOAD_PIECE_BYTES)
         first = next(pieces, b"")
