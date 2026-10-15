@@ -1,11 +1,13 @@
 manifest_version: 2
-lifecycle: {data_schema_version: 1, data_migrations: []}
+lifecycle:
+  data_schema_version: 1
+  data_migrations: []
 extension_id: flowsteward.file-transfer
 kind: tool_provider
 version: 0.2.0
 display_name: File Transfer
-description: Streams opaque files over FTP, explicit FTPS, SFTP and Dropbox using Flow
-  Steward artifact grants.
+description: Streams opaque files over FTP, explicit FTPS, SFTP and Dropbox using
+  Flow Steward artifact grants.
 vendor:
   name: Flow Steward
   support_url: https://github.com/Flow-Steward/ext-file-transfer-sftp/issues
@@ -18,7 +20,8 @@ listing:
   - ftps
   - sftp
   - dropbox
-  summary: Move files over FTP, FTPS, SFTP and Dropbox using Flow Steward artifact grants.
+  summary: Move files over FTP, FTPS, SFTP and Dropbox using Flow Steward artifact
+    grants.
 features:
 - tool
 - action
@@ -74,28 +77,51 @@ runtime:
     oauth_providers:
     - provider_id: dropbox_oauth
       display_name: Dropbox
-      description: A project-owned Dropbox app and the Dropbox accounts authorized through it.
+      description: A project-owned Dropbox app and the Dropbox accounts authorized
+        through it.
       setup_page_id: dropbox-setup
       help_page_id: dropbox-setup
       error_help_anchors:
         invalid_client: app-credentials
         authorization_required: authorize-again
         authorization_denied: authorize-again
-      flow: {type: authorization_code, pkce: s256}
+      flow:
+        type: authorization_code
+        pkce: s256
       credential_fields:
-      - {field_id: client_id, value_type: text, required: true, secret: false, browser_exposable: true,
-        change_policy: reauthorization_required, label: Dropbox App key, help_text: Enter the App
-          key from the Dropbox App Console., autocomplete: username, validation: {min_length: 1,
-          max_length: 512}}
-      - {field_id: client_secret, value_type: secret, required: true, secret: true, change_policy: runtime_revalidate,
-        label: Dropbox App secret, help_text: Enter the matching App secret from the Dropbox App
-          Console., autocomplete: current-password, validation: {min_length: 1, max_length: 4096}}
-      authorization_endpoint: {url: 'https://www.dropbox.com/oauth2/authorize'}
-      token_endpoint: {url: 'https://api.dropboxapi.com/oauth2/token', client_auth_method: client_secret_post}
+      - field_id: client_id
+        value_type: text
+        required: true
+        secret: false
+        browser_exposable: true
+        change_policy: reauthorization_required
+        label: Dropbox App key
+        help_text: Enter the App key from the Dropbox App Console.
+        autocomplete: username
+        validation:
+          min_length: 1
+          max_length: 512
+      - field_id: client_secret
+        value_type: secret
+        required: true
+        secret: true
+        change_policy: runtime_revalidate
+        label: Dropbox App secret
+        help_text: Enter the matching App secret from the Dropbox App Console.
+        autocomplete: current-password
+        validation:
+          min_length: 1
+          max_length: 4096
+      authorization_endpoint:
+        url: https://www.dropbox.com/oauth2/authorize
+      token_endpoint:
+        url: https://api.dropboxapi.com/oauth2/token
+        client_auth_method: client_secret_post
       callback_id: oauth_authorization
       authorization_intents:
       - intent_id: dropbox_connect
-        static_parameters: {token_access_type: offline}
+        static_parameters:
+          token_access_type: offline
     connection_types: contracts/connection_types.yaml
     operation_manifest: contracts/operation_manifest.yaml
     artifact_policies: contracts/artifact_policies.yaml
@@ -137,14 +163,47 @@ health:
   timeout_seconds: 5
 ui_manifest: ui/ui_manifest.yaml
 callbacks:
-- {callback_id: oauth_authorization, purpose: oauth_authorization, methods: [GET], connection_scoped: false}
+- callback_id: oauth_authorization
+  purpose: oauth_authorization
+  methods:
+  - GET
+  connection_scoped: false
 action_manifest: ui/actions/actions.yaml
 python_requirements:
+- name: aiobotocore
+  version: 3.9.2
+  hashes:
+  - sha256:363b4892423b272eb84afbb58000da0be6ccd0cf8a68b98438c957d05b841efc
+- name: aiohappyeyeballs
+  version: 2.7.1
+  hashes:
+  - sha256:9243213661e29250eb41368e5daa826fc017156c3b8a11440826b2e3ed376472
+- name: aiohttp
+  version: 3.14.5
+  hashes:
+  - sha256:20f085697d7e911f1f73c43ed03fafbed1e7121797e2eb5428efa80398060584
+  - sha256:abfda5cb094a829f7bc25216a32f7db2e85cc65bd59910f8e7b40b3d9b224764
+- name: aioitertools
+  version: 0.13.0
+  hashes:
+  - sha256:0be0292b856f08dfac90e31f4739432f4cb6d7520ab9eb73e143f4f2fa5259be
+- name: aiosignal
+  version: 1.4.0
+  hashes:
+  - sha256:053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e
+- name: attrs
+  version: 26.1.0
+  hashes:
+  - sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309
 - name: bcrypt
   version: 5.0.0
   hashes:
   - sha256:7aeef54b60ceddb6f30ee3db090351ecf0d40ec6e2abf41430997407a46d2254
   - sha256:ddb4e1500f6efdd402218ffe34d040a1196c072e07929b9820f363a1fd1f4191
+- name: botocore
+  version: 1.43.106
+  hashes:
+  - sha256:c1fb8818f9957cb5037f73db34ac1a12ba43562e31d6e7f9cb7e5fc64e1dba78
 - name: cffi
   version: 2.1.0
   hashes:
@@ -155,14 +214,37 @@ python_requirements:
   hashes:
   - sha256:0e959b578856a3924bc0cbb710fc12c387b9412a951389f3ca61704a9e25f325
   - sha256:36d1709f992593689b45bda411498d62c6e365f2ca00b84657d4dadd24de16db
+- name: frozenlist
+  version: 1.8.0
+  hashes:
+  - sha256:494a5952b1c597ba44e0e78113a7266e656b9794eec897b19ead706bd7074383
+  - sha256:96f423a119f4777a4a056b66ce11527366a8bb92f54e541ade21f2374433f6d4
+- name: idna
+  version: '3.20'
+  hashes:
+  - sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
 - name: invoke
   version: 3.0.3
   hashes:
   - sha256:f11327165e5cbb89b2ad1d88d3292b5113332c43b8553b494da435d6ec6f5053
+- name: jmespath
+  version: 1.1.0
+  hashes:
+  - sha256:a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64
+- name: multidict
+  version: 6.9.1
+  hashes:
+  - sha256:35fc236507fb1b3138f0af5ecd5f94ed752d4d6d826248eae425f86204013eea
+  - sha256:976fd7689d69ec78d67d31d38d396d8adb562f7e8368279f76aed4aa451fa06d
 - name: paramiko
   version: 5.0.0
   hashes:
   - sha256:b7044611c30140d9a75261653210e2002977b71a0497ff3ba0d98d7edbf62f7c
+- name: propcache
+  version: 0.5.4
+  hashes:
+  - sha256:2814ecd8e818f487bee4b0f921bc4d1c176cc5fc71ac0f072d0fa67eda4ac14b
+  - sha256:60a64cbccaa11b7760ce705a14ada17ba459e7ca9f23ba587eb013821032d7ef
 - name: pycparser
   version: '3.0'
   hashes:
@@ -172,3 +254,29 @@ python_requirements:
   hashes:
   - sha256:22de65bb9010a725b0dac248f353bb072969c94fa8d6b1f34b87d7953cf7bbe4
   - sha256:8845c0631c0be43abdd865511c41eab235e0be69c81dc66a50911594198679b0
+- name: python-dateutil
+  version: 2.9.0.post0
+  hashes:
+  - sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+- name: six
+  version: 1.17.0
+  hashes:
+  - sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+- name: typing-extensions
+  version: 4.16.0
+  hashes:
+  - sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+- name: urllib3
+  version: 2.8.0
+  hashes:
+  - sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3
+- name: wrapt
+  version: 2.5.1
+  hashes:
+  - sha256:bfaa998ceeea4d0aa72b40cdd0023d19409504e244b439ff2aa9f01729341c5f
+  - sha256:d6d274ec50a5b208be75596dc44ea253e65deaa6ee3a600babc86dafbb957dfc
+- name: yarl
+  version: 1.25.1
+  hashes:
+  - sha256:4d781294bb815ecb5ea57ff6bbf8038e0a31a95fdf3e1788f66e0dc100d64b58
+  - sha256:c6f117789d22dce188e5754e8bc65b7e6ebf8cb73963b9fa761f672a5883769d
