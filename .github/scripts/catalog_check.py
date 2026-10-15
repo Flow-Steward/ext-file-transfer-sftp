@@ -40,7 +40,7 @@ def _repository() -> str:
 
 
 def _fetch(path: str) -> bytes:
-    with urllib.request.urlopen(f"{CATALOG}/{path}", timeout=60) as response:  # noqa: S310 - fixed https host
+    with urllib.request.urlopen(f"{CATALOG}/{path}", timeout=60) as response:
         return response.read()
 
 
@@ -49,7 +49,9 @@ def main(paths: list[str]) -> int:
         source, categories = _fetch("scripts/build_index.py"), json.loads(_fetch("categories.json"))
         publishers = json.loads(_fetch("verified_publishers.json"))
     except OSError as exc:
-        print(f"::warning::catalog checker unavailable ({exc}); archives were not checked against it")
+        print(
+            f"::warning::catalog checker unavailable ({exc}); archives were not checked against it"
+        )
         return 0
     with tempfile.TemporaryDirectory() as tmp:
         script = Path(tmp) / "build_index.py"
@@ -69,8 +71,12 @@ def main(paths: list[str]) -> int:
         entry = catalog.parse_entry(match["id"], f"repository: {_repository()}\n")
         try:
             catalog.inspect_archive(
-                Path(path).read_bytes(), entry=entry, version=match["version"],
-                categories=set(categories), publishers=publishers, target=match["target"] or "",
+                Path(path).read_bytes(),
+                entry=entry,
+                version=match["version"],
+                categories=set(categories),
+                publishers=publishers,
+                target=match["target"] or "",
             )
         except catalog.CatalogError as exc:
             print(f"{path}: {exc}", file=sys.stderr)

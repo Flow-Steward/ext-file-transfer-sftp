@@ -520,7 +520,9 @@ def test_sftp_loopback_reports_real_authentication_failure(tmp_path, monkeypatch
     with (
         _SFTPLoopbackServer(root, outside, host_key) as server,
         pytest.raises(ft.FileTransferError) as exc_info,
-        ft.SFTPClient(_sftp_config(port=server.port, host_key=host_key, password="wrong-password")),  # pragma: allowlist secret - fixture asserting a REJECTED password
+        ft.SFTPClient(
+            _sftp_config(port=server.port, host_key=host_key, password="wrong-password")
+        ),  # pragma: allowlist secret - fixture asserting a REJECTED password
     ):
         pass
 
