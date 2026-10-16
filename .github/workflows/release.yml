@@ -29,6 +29,7 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: dist
@@ -39,3 +40,4 @@ jobs:
         run: >
           gh release create "${GITHUB_REF_NAME}" dist/*.zip
           --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --generate-notes
+          --notes "$(cat .github/RELEASE_NOTES.md 2>/dev/null)"

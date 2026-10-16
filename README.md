@@ -126,6 +126,11 @@ app's own folder. On the extension's Dropbox tab, add the OAuth Redirect URI
 shown there as a redirect URI and save the App key and App secret; the same tab
 then connects accounts with Authorization Code + PKCE.
 
+Connecting from that one tab needs a Flow Steward Core that shows an OAuth
+provider's setup and its Connect form on the same page. An older Core shows
+only the App key and App secret form there, so Dropbox accounts cannot be
+connected until Core is updated; FTP, SFTP and S3 are not affected.
+
 Core keeps the refresh token and the app secret; each operation receives only
 the selected account's current access token, so connections and accounts never
 share a client or token. Requests go only to `api.dropboxapi.com` and
