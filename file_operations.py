@@ -21,6 +21,8 @@ from flowsteward_extension_sdk import (
     ArtifactAccessError,
     PinnedPeerError,
     find_artifact_descriptor,
+    report_progress,
+    runtime_context_from_payload,
     stream_artifact_bytes,
     write_artifact_stream,
 )
@@ -41,16 +43,6 @@ from file_connections import (
     UploadOptions,
 )
 from file_errors import FileTransferError, failure_response, unknown_outcome
-
-try:
-    from flowsteward_extension_sdk import report_progress
-except ImportError:  # a Core with an SDK older than 0.3.0 shows no progress
-
-    def report_progress(
-        message: str = "", *, done: int | None = None, total: int | None = None
-    ) -> None:
-        return None
-
 
 MAX_TRANSFER_BYTES = 200 * 1024 * 1024
 MIN_TRANSFER_BYTES = 1024 * 1024
@@ -582,6 +574,19 @@ _OPERATIONS: dict[str, Callable[[dict[str, Any], Deadline], dict[str, Any]]] = {
 
 def handle_payload(payload: dict[str, Any]) -> dict[str, Any]:
     redaction_payload = payload if isinstance(payload, dict) else {}
+    # The host envelope of an object payload is checked before anything is read,
+    # sent or written: another contract, a missing execution-scope key or two
+    # owners is refused. A non-object stays invalid_payload below.
+    if isinstance(payload, dict):
+        try:
+            runtime_context_from_payload(payload)
+        except ValueError as exc:
+            return failure_response(
+                "invalid_host_envelope",
+                str(exc),
+                definitely_no_external_effect=True,
+                external_effect_status="failed",
+            )
     try:
         if not isinstance(payload, dict):
             raise FileTransferError("invalid_payload", "Request payload must be a JSON object")

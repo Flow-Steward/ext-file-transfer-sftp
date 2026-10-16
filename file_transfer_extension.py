@@ -961,7 +961,7 @@ class SFTPClient:
 
     def __enter__(self) -> SFTPClient:
         try:
-            import paramiko  # type: ignore[import-untyped]
+            import paramiko  # type: ignore[import-untyped, unused-ignore]
         except Exception as exc:
             raise FileTransferError(
                 "dependency_unavailable", "Paramiko is required from extension-local wheels"

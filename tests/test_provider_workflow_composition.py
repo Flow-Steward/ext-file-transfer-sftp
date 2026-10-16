@@ -21,6 +21,12 @@ import file_transfer_extension as ft
 from connections import dropbox as dbx
 from connections import s3
 from tests._fake_s3 import ENDPOINT_HOST, SERVER_IP, FakeS3, write_certificates
+from tests._host_scope import (
+    FOR_EACH_STEP_SCOPE,
+    GROUP_STEP_SCOPE,
+    ROOT_STEP_SCOPE,
+    host_context,
+)
 from tests.test_dropbox_connection import FakeDropbox
 
 EXTENSION_ID = "flowsteward.file-transfer"
@@ -177,14 +183,17 @@ def _extension() -> dict[str, Any]:
 
 
 def _runner(
-    providers: Providers, connections: dict[str, str], calls: list[dict[str, Any]]
+    providers: Providers,
+    connections: dict[str, str],
+    calls: list[dict[str, Any]],
+    scope: dict[str, Any] | None = None,
 ) -> Callable[..., Any]:
     """The host side of an action: real grants in, the real operation layer, its envelope out."""
 
     def _run_action(extension, action_id, input_payload, **kwargs):
         payload = {
             "contract_version": "extension_host_v2",
-            "runtime_context": {},
+            "runtime_context": host_context(scope=scope),
             "action": {
                 "action_id": action_id,
                 "target": {"connection": providers.connection(connections[action_id])},
@@ -204,7 +213,7 @@ def _runner(
     return _run_action
 
 
-def _fetch(harness, state, providers, kind, calls, path="feeds/inventory.csv"):
+def _fetch(harness, state, providers, kind, calls, path="feeds/inventory.csv", scope=None):
     return harness.execute_connector_step(
         step={
             "step_kind": "connector",
@@ -214,7 +223,7 @@ def _fetch(harness, state, providers, kind, calls, path="feeds/inventory.csv"):
         },
         state=state,
         extensions={EXTENSION_ID: _extension()},
-        run_action=_runner(providers, {"fetch_file": kind}, calls),
+        run_action=_runner(providers, {"fetch_file": kind}, calls, scope),
     )
 
 
@@ -300,7 +309,7 @@ def test_fetch_handle_uploads_across_connection_types(tmp_path, providers, sourc
 def test_test_mode_upload_changes_nothing_for_every_connection_type(tmp_path, providers, kind):
     payload = {
         "contract_version": "extension_host_v2",
-        "runtime_context": {"test_mode": True},
+        "runtime_context": host_context({"test_mode": True}),
         "action": {
             "action_id": "upload_file",
             "target": {"connection": providers.connection(kind)},
@@ -314,3 +323,97 @@ def test_test_mode_upload_changes_nothing_for_every_connection_type(tmp_path, pr
     assert providers.get(kind, "out/a.bin") is None
     assert providers.s3.seen == []
     assert providers.dropbox.calls == []
+
+
+@pytest.mark.parametrize("scope", [ROOT_STEP_SCOPE, GROUP_STEP_SCOPE, FOR_EACH_STEP_SCOPE])
+@pytest.mark.parametrize("kind", ["sftp", "s3", "dropbox"])
+def test_every_final_scope_owner_reads_and_writes_artifacts(tmp_path, providers, kind, scope):
+    # A step at the root, in a Group or in a For each fetches into an artifact
+    # and uploads that artifact back: the grants work the same in every scope.
+    providers.put(kind, "feeds/inventory.csv", FEED)
+    harness = ExtensionWorkflowHarness(artifact_root=tmp_path / "artifacts")
+    state = _state(harness, f"{kind}_scoped")
+    calls: list[dict[str, Any]] = []
+
+    fetched = _fetch(harness, state, providers, kind, calls, scope=scope)
+    state.update(fetched.get("state_patch") or {})
+    uploaded = harness.execute_connector_step(
+        step={
+            "step_kind": "connector",
+            "connector_id": f"{EXTENSION_ID}.upload_file",
+            "input_mapping_jsonb": {
+                "artifact_handle": "state.raw_feed_artifact",
+                "remote_path": "literal:out/inventory.csv",
+            },
+        },
+        state=state,
+        extensions={EXTENSION_ID: _extension()},
+        run_action=_runner(providers, {"upload_file": kind}, calls, scope),
+    )
+
+    assert [call["response"]["ok"] for call in calls] == [True, True], calls
+    assert fetched["ok"] is True
+    assert uploaded["ok"] is True
+    assert providers.get(kind, "out/inventory.csv") == FEED
+    _no_body_in_state(state, FEED)
+
+
+@pytest.mark.parametrize(
+    ("contract_version", "scope", "reason"),
+    [
+        ("extension_host_v1", FOR_EACH_STEP_SCOPE, "Unsupported host contract"),
+        ("", FOR_EACH_STEP_SCOPE, "Unsupported host contract"),
+        (
+            "extension_host_v2",
+            {k: v for k, v in FOR_EACH_STEP_SCOPE.items() if k != "for_each_id"},
+            "misses execution scope",
+        ),
+        (
+            "extension_host_v2",
+            {**FOR_EACH_STEP_SCOPE, "group_id": "sync_feeds"},
+            "both a Group and a For each",
+        ),
+        (
+            "extension_host_v2",
+            {**ROOT_STEP_SCOPE, "step_execution_id": None},
+            "without its logical execution",
+        ),
+    ],
+)
+@pytest.mark.parametrize("operation", ["list_files", "fetch_file", "upload_file"])
+@pytest.mark.parametrize("kind", ["sftp", "s3", "dropbox"])
+def test_foreign_or_incomplete_envelope_is_refused_before_any_effect(
+    monkeypatch, providers, kind, operation, contract_version, scope, reason
+):
+    def no_effect(*_args: Any, **_kwargs: Any) -> Any:
+        raise AssertionError("a refused envelope must not reach a server or an artifact")
+
+    monkeypatch.setattr(ft, "_client_for", no_effect)
+    monkeypatch.setattr(ops, "stream_artifact_bytes", no_effect)
+    monkeypatch.setattr(ops, "write_artifact_stream", no_effect)
+    providers.put(kind, "feeds/inventory.csv", FEED)
+    inputs = {
+        "list_files": {"path": "feeds"},
+        "fetch_file": {"path": "feeds/inventory.csv"},
+        "upload_file": {"artifact_handle": "art_in", "remote_path": "out/a.bin"},
+    }
+    payload = {
+        "contract_version": contract_version,
+        "runtime_context": dict(scope),
+        "action": {
+            "action_id": operation,
+            "target": {"connection": providers.connection(kind)},
+            "input": inputs[operation],
+        },
+    }
+
+    response = ops.handle_payload(payload)
+
+    assert response["ok"] is False
+    assert response["error_code"] == "invalid_host_envelope"
+    assert reason in response["error"]
+    assert response["definitely_no_external_effect"] is True
+    assert response["external_effect_status"] == "failed"
+    assert providers.s3.seen == []
+    assert providers.dropbox.calls == []
+    assert providers.get(kind, "out/a.bin") is None

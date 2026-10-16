@@ -14,6 +14,7 @@ import pytest
 
 import file_operations as ops
 from connections import dropbox as dbx
+from tests._host_scope import host_context
 
 MiB = 1024 * 1024
 
@@ -175,7 +176,7 @@ def _payload(
 ) -> dict[str, Any]:
     payload = {
         "contract_version": "extension_host_v2",
-        "runtime_context": {},
+        "runtime_context": host_context(extra.pop("runtime_context", {})),
         "action": {
             "action_id": operation,
             "target": {

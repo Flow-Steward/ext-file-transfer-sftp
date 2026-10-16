@@ -16,6 +16,7 @@ import pytest
 import file_operations as ops
 import file_transfer_extension as ft
 import health as ft_health
+from tests._host_scope import host_context
 
 
 def _fingerprint(blob: bytes = b"server-key") -> str:
@@ -49,7 +50,7 @@ def _payload(
     base_secrets.update(secrets or {})
     payload = {
         "contract_version": "extension_host_v2",
-        "runtime_context": runtime_context or {},
+        "runtime_context": host_context(runtime_context),
         "action": {
             "action_id": operation,
             "target": {
@@ -602,7 +603,8 @@ def test_malformed_test_mode_is_rejected_before_connection_validation(monkeypatc
     monkeypatch.setattr(ft, "_client_for", MagicMock(side_effect=AssertionError("no network")))
     response = ops.handle_payload(
         {
-            "runtime_context": {"test_mode": "definitely"},
+            "contract_version": "extension_host_v2",
+            "runtime_context": host_context({"test_mode": "definitely"}),
             "action": {
                 "action_id": "upload_file",
                 "input": {"artifact_handle": "art_1", "remote_path": "out.csv"},
@@ -625,7 +627,8 @@ def test_upload_test_mode_suppresses_before_connection_validation(monkeypatch):
 
     response = ops.handle_payload(
         {
-            "runtime_context": {"test_mode": True},
+            "contract_version": "extension_host_v2",
+            "runtime_context": host_context({"test_mode": True}),
             "action": {
                 "action_id": "upload_file",
                 "input": {"artifact_handle": "art_1", "remote_path": "out.csv"},
@@ -921,6 +924,7 @@ def test_sftp_host_key_discovery_does_not_authenticate(monkeypatch):
     response = ops.handle_payload(
         {
             "contract_version": "extension_host_v2",
+            "runtime_context": host_context(),
             "action": {
                 "action_id": "discover_host_key",
                 "target": {

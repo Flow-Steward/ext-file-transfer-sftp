@@ -11,6 +11,7 @@ from aiohttp import web
 import file_operations as ops
 from connections import s3
 from tests._fake_s3 import DECOY_IP, ENDPOINT_HOST, SERVER_IP, FakeS3, write_certificates
+from tests._host_scope import host_context
 
 
 @pytest.fixture
@@ -54,7 +55,7 @@ def _payload(server: FakeS3, operation: str = "list_files", **overrides: Any) ->
     )
     return {
         "contract_version": "extension_host_v2",
-        "runtime_context": {},
+        "runtime_context": host_context(),
         "action": {
             "action_id": operation,
             "target": {

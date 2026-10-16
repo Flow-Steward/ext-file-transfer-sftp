@@ -26,6 +26,7 @@ import pytest
 
 import file_operations as ops
 from connections import s3
+from tests._host_scope import host_context
 
 ENDPOINT = os.environ.get("FT_S3_IT_ENDPOINT", "")
 pytestmark = pytest.mark.skipif(not ENDPOINT, reason="FT_S3_IT_ENDPOINT is not set")
@@ -103,7 +104,7 @@ def _open_uploads(target: dict[str, Any]) -> list[Any]:
 def _payload(target: dict[str, Any], operation: str, input_payload: dict[str, Any], **extra):
     payload = {
         "contract_version": "extension_host_v2",
-        "runtime_context": {},
+        "runtime_context": host_context(extra.pop("runtime_context", {})),
         "action": {
             "action_id": operation,
             "target": {"connection": {"connection_type_id": "s3", **target}},

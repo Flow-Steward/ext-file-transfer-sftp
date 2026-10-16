@@ -12,6 +12,7 @@ from aiohttp import web
 import file_operations as ops
 from connections import s3
 from tests._fake_s3 import ENDPOINT_HOST, SERVER_IP, FakeS3, s3_error, write_certificates
+from tests._host_scope import host_context
 
 MiB = 1024 * 1024
 
@@ -56,7 +57,7 @@ def _payload(
     }
     payload: dict[str, Any] = {
         "contract_version": "extension_host_v2",
-        "runtime_context": {},
+        "runtime_context": host_context(overrides.pop("runtime_context", {})),
         "action": {
             "action_id": operation,
             "target": {

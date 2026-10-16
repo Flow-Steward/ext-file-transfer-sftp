@@ -27,6 +27,7 @@ from file_connections import (
     UploadOptions,
     UploadResult,
 )
+from tests._host_scope import host_context
 
 BUNDLE_ROOT = Path(__file__).resolve().parents[1]
 MiB = 1024 * 1024
@@ -131,7 +132,7 @@ def _install(monkeypatch, fake: FakeConnection) -> None:
 def _payload(operation: str, input_payload: dict[str, Any], **extra: Any) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "contract_version": "extension_host_v2",
-        "runtime_context": extra.pop("runtime_context", {}),
+        "runtime_context": host_context(extra.pop("runtime_context", {})),
         "action": {
             "action_id": operation,
             "target": {
@@ -520,7 +521,9 @@ def test_test_mode_upload_never_opens_a_connection(monkeypatch):
 
     monkeypatch.setattr(ops, "open_file_connection", _never)
 
-    response = ops.handle_payload({**_upload_payload(4), "runtime_context": {"test_mode": True}})
+    response = ops.handle_payload(
+        {**_upload_payload(4), "runtime_context": host_context({"test_mode": True})}
+    )
 
     assert response["ok"] is True
     assert response["external_effect_status"] == "suppressed"

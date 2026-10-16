@@ -17,6 +17,19 @@ Paths are relative to the connection's root and use `/`; `.` is the root
 itself. Absolute paths, backslashes, control characters and `.`/`..` segments
 are refused. Names are taken literally: `%2F` stays three characters.
 
+## Requirements
+
+This release speaks the host contract `extension_host_v2` with its final
+execution scope (`group_id`, `for_each_id`, `step_id`, `step_execution_id`)
+and is built on `flowsteward-extension-sdk` 0.4.0. A request with another
+contract, a missing scope key, both a Group and a For each as its owner, or a
+step without its execution is refused (`invalid_host_envelope`) before any
+artifact is read or written and before any server is contacted. The operations
+work the same for a step at the root, in a Group or in a For each. Install it
+on a Flow Steward Core that speaks this contract; an older Core does not run it.
+
+Logo: `icon.png` (the Flow Steward wave mark).
+
 ## How It Is Built
 
 All connection types implement one interface, `FileConnection` in
