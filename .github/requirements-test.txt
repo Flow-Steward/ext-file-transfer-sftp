@@ -1,8 +1,27 @@
 # Installed by CI for the tests; the runtime installs python_requirements itself.
+# Same pins as extension.yaml python_requirements.
+aiobotocore==3.9.2
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.5
+aioitertools==0.13.0
+aiosignal==1.4.0
+attrs==26.1.0
 bcrypt==5.0.0
-cffi==2.1.0
-cryptography==49.0.0
+botocore==1.43.106
+cffi==2.1.1
+cryptography==50.0.2
+frozenlist==1.8.0
+idna==3.20
 invoke==3.0.3
+jmespath==1.1.0
+multidict==6.9.1
 paramiko==5.0.0
-pycparser==3.0
+propcache==0.5.4
+pycparser==3.11
 pynacl==1.6.2
+python-dateutil==2.9.0.post0
+six==1.17.0
+typing-extensions==4.16.0
+urllib3==2.8.0
+wrapt==2.5.1
+yarl==1.25.1
