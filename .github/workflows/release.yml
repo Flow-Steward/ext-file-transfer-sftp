@@ -1,17 +1,25 @@
 # Push a tag matching extension.yaml's version (`git tag v1.0.1 && git push --tags`).
 # The release publishes exactly what CI built and checked; the Flow Steward
-# extension catalog picks it up within the hour.
+# extension catalog is notified after publication (polling remains a fallback).
 name: Release
 
 on:
   push:
     tags: ["v*"]
+  # Retry catalog delivery for an already-published release; never rebuild it.
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing published release tag to announce (for example v1.2.0)
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
   tag:
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,10 +30,12 @@ jobs:
             || { echo "::error::tag ${GITHUB_REF_NAME} does not match version ${version}"; exit 1; }
 
   ci:
+    if: ${{ github.event_name == 'push' }}
     needs: tag
     uses: ./.github/workflows/ci.yml
 
   release:
+    if: ${{ github.event_name == 'push' }}
     needs: ci
     runs-on: ubuntu-latest
     steps:
@@ -41,3 +51,64 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" dist/*.zip
           --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --generate-notes
           --notes "$(cat .github/RELEASE_NOTES.md 2>/dev/null)"
+
+  announce_catalog:
+    name: Announce the published release to the catalog
+    needs: release
+    # Manual delivery still runs when the tag/CI/release chain is skipped.
+    # Cancelling a run never starts a new catalog notification.
+    if: >-
+      ${{
+        always() && !cancelled() &&
+        ((github.event_name == 'push' && needs.release.result == 'success') ||
+          github.event_name == 'workflow_dispatch')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Used only to read this repository's release. The catalog token is separate.
+    permissions:
+      contents: read
+    env:
+      SOURCE_REPOSITORY: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+    steps:
+      - name: Verify the source release is already published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "::error::A published release tag is required; no catalog dispatch was sent."
+            exit 1
+          fi
+          if ! is_draft=$(gh release view "$RELEASE_TAG" --repo "$SOURCE_REPOSITORY" --json isDraft --jq .isDraft); then
+            echo "::error::Cannot verify the source release; no catalog dispatch was sent. Check the tag and retry delivery."
+            exit 1
+          fi
+          if [ "$is_draft" != false ]; then
+            echo "::error::The source release is still a draft; publish it before retrying catalog delivery."
+            exit 1
+          fi
+      - name: Send extension-released to Flow-Steward/extensions
+        env:
+          # Fine-grained token: only Flow-Steward/extensions, Contents: write.
+          GH_TOKEN: ${{ secrets.CATALOG_DISPATCH_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::CATALOG_DISPATCH_TOKEN is missing. The release is already published. Configure the secret and use Run workflow with its release_tag to retry catalog delivery only."
+            exit 1
+          fi
+          if ! gh api --hostname github.com --method POST \
+            repos/Flow-Steward/extensions/dispatches \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            --raw-field "event_type=extension-released" \
+            --raw-field "client_payload[repository]=$SOURCE_REPOSITORY" \
+            --raw-field "client_payload[tag]=$RELEASE_TAG"; then
+            echo "::error::Catalog notification failed; the release and its assets remain published. Use Run workflow with its release_tag to retry delivery only."
+            exit 1
+          fi
+          printf 'Catalog notification accepted for %s (%s).\n' "$SOURCE_REPOSITORY" "$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"

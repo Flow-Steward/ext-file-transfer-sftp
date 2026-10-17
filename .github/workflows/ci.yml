@@ -28,6 +28,8 @@ jobs:
           # The extension's own runtime dependencies (python_requirements):
           # written by new_extension_repo.py, kept by the author.
           if [ -f .github/requirements-test.txt ]; then pip install -r .github/requirements-test.txt; fi
+      - name: Repository workflow contracts
+        run: python -m pytest -q -p no:cacheprovider .github/tests
       - name: Extension tests
         run: |
           if [ -d tests ]; then python -m pytest -q -p no:cacheprovider tests; else echo "no tests/"; fi
