@@ -4,7 +4,7 @@ lifecycle:
   data_migrations: []
 extension_id: flowsteward.file-transfer
 kind: tool_provider
-version: 0.3.0
+version: 0.3.1
 display_name: File Transfer
 description: Streams opaque files over FTP, explicit FTPS, SFTP, S3-compatible storage
   and Dropbox using Flow Steward artifact grants.
