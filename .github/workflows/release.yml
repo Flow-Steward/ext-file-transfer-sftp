@@ -98,8 +98,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::CATALOG_DISPATCH_TOKEN is missing. The release is already published. Configure the secret and use Run workflow with its release_tag to retry catalog delivery only."
-            exit 1
+            echo "::notice::Catalog updates on schedule; instant notification not configured."
+            exit 0
           fi
           if ! gh api --hostname github.com --method POST \
             repos/Flow-Steward/extensions/dispatches \

@@ -160,13 +160,18 @@ def test_dispatch_failure_is_visible_and_never_rewrites_the_release(notification
     assert not (tmp_path / "summary.md").exists()
 
 
-def test_a_missing_dispatch_credential_fails_without_calling_github(notification):
+def test_a_missing_dispatch_credential_uses_scheduled_catalog_without_calling_github(notification):
     run, requests, _tmp_path = notification
 
     result = run(1, GH_TOKEN="")
 
-    assert result.returncode != 0
-    assert "CATALOG_DISPATCH_TOKEN is missing" in result.stdout
+    assert result.returncode == 0, result.stderr
+    assert (
+        "::notice::Catalog updates on schedule; instant notification not configured."
+        in result.stdout
+    )
+    assert "::error::" not in result.stdout
+    assert "Catalog notification accepted" not in result.stdout
     assert requests() == []
 
 
