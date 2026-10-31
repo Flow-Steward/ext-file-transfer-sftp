@@ -6,10 +6,15 @@
 Fetches scripts/build_index.py from github.com/Flow-Steward/extensions and runs
 its inspect_archive on every archive, so a release the catalog would refuse
 fails here, before it is published.
+
+The checker runs as code in this job, so it is fetched at a pinned commit and
+must match a recorded SHA-256: a change to the catalog's main branch cannot run
+here until this file is updated to the new revision and digests.
 """
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import re
@@ -18,7 +23,14 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-CATALOG = "https://raw.githubusercontent.com/Flow-Steward/extensions/main"
+CATALOG_REVISION = "f21511cba4bba6e283d74494e87f9a69e0c342ab"
+CATALOG = f"https://raw.githubusercontent.com/Flow-Steward/extensions/{CATALOG_REVISION}"
+#: SHA-256 of each file at CATALOG_REVISION; update together with the revision.
+CATALOG_DIGESTS = {
+    "scripts/build_index.py": "aef2c2d9b134b35387503e085bd61afb48244393418229e63aef27b7762a6e6d",
+    "categories.json": "c80cfd8078c4a24613261a2eefe6bb1ff5c98a3503d17436eac339f548dfe9b1",
+    "verified_publishers.json": "9b9d8903a45d34f6e81739b609e406d39cdfd250b2f47e506f25952591ff98b8",
+}
 _NAME = re.compile(
     r"^(?P<id>[a-z0-9.-]+?)-(?P<version>\d+\.\d+\.\d+)(?:-(?P<target>linux-amd64|linux-arm64))?\.zip$"
 )
@@ -39,15 +51,25 @@ def _repository() -> str:
     return f"https://github.com/{slug}"
 
 
+class CatalogDigestMismatch(Exception):
+    """A fetched catalog file is not the one this repository pinned."""
+
+
 def _fetch(path: str) -> bytes:
     with urllib.request.urlopen(f"{CATALOG}/{path}", timeout=60) as response:
-        return response.read()
+        data = response.read()
+    if hashlib.sha256(data).hexdigest() != CATALOG_DIGESTS[path]:
+        raise CatalogDigestMismatch(f"{path} at {CATALOG_REVISION} does not match its pinned SHA-256")
+    return data
 
 
 def main(paths: list[str]) -> int:
     try:
         source, categories = _fetch("scripts/build_index.py"), json.loads(_fetch("categories.json"))
         publishers = json.loads(_fetch("verified_publishers.json"))
+    except CatalogDigestMismatch as exc:
+        print(f"::error::{exc}", file=sys.stderr)
+        return 1
     except OSError as exc:
         print(
             f"::warning::catalog checker unavailable ({exc}); archives were not checked against it"

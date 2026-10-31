@@ -44,6 +44,8 @@ jobs:
         with:
           name: dist
           path: dist
+      - name: Publish only the archives CI packaged
+        run: cd dist && sha256sum -c SHA256SUMS
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
