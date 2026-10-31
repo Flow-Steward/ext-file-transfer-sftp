@@ -34,11 +34,18 @@ jobs:
         run: |
           if [ -d tests ]; then python -m pytest -q -p no:cacheprovider tests; else echo "no tests/"; fi
       - name: Package the archive
-        run: python .github/scripts/package_extension.py
+        run: |
+          python .github/scripts/package_extension.py
+          # Recorded before any fetched code runs; the release verifies it again.
+          (cd dist && sha256sum -- *.zip > SHA256SUMS)
       - name: The catalog would accept it
         run: python .github/scripts/catalog_check.py dist/*.zip
+      - name: The archives are still the ones packaged
+        run: cd dist && sha256sum -c SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS
           if-no-files-found: error
