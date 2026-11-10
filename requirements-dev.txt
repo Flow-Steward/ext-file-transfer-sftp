@@ -1,7 +1,8 @@
 ./dev-wheels/flowsteward_extension_sdk-0.4.0-py3-none-any.whl
 -r requirements.in
-./dev-wheels/pytest-8.3.5-py3-none-any.whl
-./dev-wheels/iniconfig-2.3.0-py3-none-any.whl
-./dev-wheels/packaging-26.2-py3-none-any.whl
-./dev-wheels/pluggy-1.6.0-py3-none-any.whl
+./dev-wheels/pytest-9.2.0-py3-none-any.whl
+./dev-wheels/iniconfig-2.3.1-py3-none-any.whl
+./dev-wheels/packaging-26.3-py3-none-any.whl
+./dev-wheels/pluggy-1.7.0-py3-none-any.whl
 PyYAML==6.0.3
+./dev-wheels/pygments-2.21.0-py3-none-any.whl

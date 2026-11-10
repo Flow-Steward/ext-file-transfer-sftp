@@ -4,7 +4,7 @@ lifecycle:
   data_migrations: []
 extension_id: flowsteward.file-transfer
 kind: tool_provider
-version: 0.3.1
+version: 0.3.2
 display_name: File Transfer
 description: Streams opaque files over FTP, explicit FTPS, SFTP, S3-compatible storage
   and Dropbox using Flow Steward artifact grants.
@@ -181,9 +181,9 @@ callbacks:
 action_manifest: ui/actions/actions.yaml
 python_requirements:
 - name: aiobotocore
-  version: 3.9.2
+  version: "3.10.0"
   hashes:
-  - sha256:363b4892423b272eb84afbb58000da0be6ccd0cf8a68b98438c957d05b841efc
+  - sha256:de0ccbcb82b6b0009f1b6667f48442e9d0432f9b8bfe6172fa51777cbea89d03
 - name: aiohappyeyeballs
   version: 2.7.1
   hashes:
@@ -211,9 +211,9 @@ python_requirements:
   - sha256:7aeef54b60ceddb6f30ee3db090351ecf0d40ec6e2abf41430997407a46d2254
   - sha256:ddb4e1500f6efdd402218ffe34d040a1196c072e07929b9820f363a1fd1f4191
 - name: botocore
-  version: 1.43.106
+  version: "1.43.117"
   hashes:
-  - sha256:c1fb8818f9957cb5037f73db34ac1a12ba43562e31d6e7f9cb7e5fc64e1dba78
+  - sha256:5920ef9b3002e1361846549078549d9154a6e0004c22853c01ce7b279d05d495
 - name: cffi
   version: 2.1.1
   hashes:
@@ -242,23 +242,23 @@ python_requirements:
   hashes:
   - sha256:a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64
 - name: multidict
-  version: 6.9.1
+  version: "7.2.1"
   hashes:
-  - sha256:35fc236507fb1b3138f0af5ecd5f94ed752d4d6d826248eae425f86204013eea
-  - sha256:976fd7689d69ec78d67d31d38d396d8adb562f7e8368279f76aed4aa451fa06d
+  - sha256:fa0ecd064b0ae18d235283abb5adbc4e07304dba8f2aa7c0d61f28bebcc70d4c
+  - sha256:1fb8c1a3480c130c3a6422d5f16f3cad6552bf08c2089dd288ba7134649183b5
 - name: paramiko
-  version: 5.0.0
+  version: "5.1.0"
   hashes:
-  - sha256:b7044611c30140d9a75261653210e2002977b71a0497ff3ba0d98d7edbf62f7c
+  - sha256:d9fe6d67a9d0bbf3eb85b051d26ab850b678c02d060f32915b944e5ca6d0d9e1
 - name: propcache
   version: 0.5.4
   hashes:
   - sha256:2814ecd8e818f487bee4b0f921bc4d1c176cc5fc71ac0f072d0fa67eda4ac14b
   - sha256:60a64cbccaa11b7760ce705a14ada17ba459e7ca9f23ba587eb013821032d7ef
 - name: pycparser
-  version: '3.11'
+  version: "3.12"
   hashes:
-  - sha256:51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80
+  - sha256:a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e
 - name: pynacl
   version: 1.6.2
   hashes:
@@ -281,10 +281,10 @@ python_requirements:
   hashes:
   - sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3
 - name: wrapt
-  version: 2.5.1
+  version: "2.5.2"
   hashes:
-  - sha256:bfaa998ceeea4d0aa72b40cdd0023d19409504e244b439ff2aa9f01729341c5f
-  - sha256:d6d274ec50a5b208be75596dc44ea253e65deaa6ee3a600babc86dafbb957dfc
+  - sha256:092472b7b1494deef40dac5e9f6295013a9d51b112b5fbc4350f64dc2574e46a
+  - sha256:d108bd98ab2c5ccbf55cf2154e0a73341df930030df2e01ee35d71a44a99d3ad
 - name: yarl
   version: 1.25.1
   hashes:

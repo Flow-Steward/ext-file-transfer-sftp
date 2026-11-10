@@ -143,8 +143,8 @@ def test_manifest_scope_contract_has_no_artifact_write():
     type_ids = [row["connection_type_id"] for row in connection_types["connection_types"]]
     assert type_ids == ["ftp", "sftp", "s3", "dropbox"]
     assert "artifact:write" not in str(manifest)
-    assert any(row["name"] == "paramiko" for row in manifest["python_requirements"])
-    assert (bundle_root / "wheels" / "paramiko-5.0.0-py3-none-any.whl").is_file()
+    paramiko = next(row for row in manifest["python_requirements"] if row["name"] == "paramiko")
+    assert (bundle_root / "wheels" / f"paramiko-{paramiko['version']}-py3-none-any.whl").is_file()
 
 
 def test_health_reports_missing_dependency(monkeypatch):

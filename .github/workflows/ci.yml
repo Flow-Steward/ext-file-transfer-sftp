@@ -23,7 +23,7 @@ jobs:
         # The host provides flowsteward-extension-sdk at runtime; tests use the
         # wheel committed in dev-wheels/ until the SDK is published.
         run: |
-          pip install pytest==8.3.5 PyYAML==6.0.3
+          pip install pytest==9.2.0 PyYAML==6.0.3
           if ls dev-wheels/flowsteward_extension_sdk-*.whl >/dev/null 2>&1; then pip install dev-wheels/flowsteward_extension_sdk-*.whl; fi
           # The extension's own runtime dependencies (python_requirements):
           # written by new_extension_repo.py, kept by the author.
