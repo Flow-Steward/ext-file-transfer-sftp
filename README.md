@@ -181,3 +181,6 @@ bash scripts/ci.sh
 
 `requirements-dev.txt` installs the pinned public SDK wheel from `dev-wheels/`;
 update that wheel when the public SDK contract changes.
+
+The maintained AWS dependency graph and exact fork provenance are documented in
+[docs/aws-compatibility.md](docs/aws-compatibility.md) and `dependency-sources.json`.

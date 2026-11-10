@@ -1,0 +1,40 @@
+[
+  {
+    "path": "aiobotocore/__init__.py",
+    "sha256": "b5dccc40638a7176f914f54a0d377248a84e0d6990935463f3544d7ca2b47aa1",
+    "replacements": [
+      [
+        "__version__ = '3.10.0'",
+        "__version__ = '3.10.0+flowsteward.1'"
+      ]
+    ]
+  },
+  {
+    "path": "aiobotocore/signers.py",
+    "sha256": "40b3e95c9293875337ca21d73256fc0c5d7d76fe20aa2737b544c245103a7022",
+    "replacements": [
+      [
+        "    if conditions is None:\n        conditions = []\n\n    context = {",
+        "    if conditions is None:\n        conditions = []\n    else:\n        conditions = conditions.copy()\n\n    context = {"
+      ]
+    ]
+  },
+  {
+    "path": "aiobotocore-3.10.0.dist-info/METADATA",
+    "sha256": "fd63fdf03b36c0fa367871741414e85e7cb5aee67c1aba27841b529a0c8653c1",
+    "replacements": [
+      [
+        "Version: 3.10.0\n",
+        "Version: 3.10.0+flowsteward.1\n"
+      ],
+      [
+        "Requires-Dist: botocore<1.43.118,>=1.43.115",
+        "Requires-Dist: botocore==1.43.127+flowsteward.1"
+      ],
+      [
+        "Requires-Dist: python-dateutil<3.0.0,>=2.1",
+        "Requires-Dist: python-dateutil==4.0.0"
+      ]
+    ]
+  }
+]

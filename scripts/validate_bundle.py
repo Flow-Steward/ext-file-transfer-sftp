@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -133,6 +136,67 @@ def _validate_python_wheels(extension: dict[str, Any], errors: list[str]) -> Non
                 f"python requirement {name or '<missing>'} has hashes with no bundled wheel: "
                 + ", ".join(missing)
             )
+
+    _validate_python_forks(extension, errors)
+
+
+def _validate_python_forks(extension: dict[str, Any], errors: list[str]) -> None:
+    local = [
+        row
+        for row in _as_list(extension.get("python_requirements"))
+        if isinstance(row, dict) and "+" in str(row.get("version", ""))
+    ]
+    if not local:
+        return
+    try:
+        provenance = json.loads((BUNDLE_ROOT / "dependency-sources.json").read_text())
+        if provenance.get("schema_version") != 1:
+            raise ValueError("unsupported schema version")
+        rows = provenance["dependencies"]
+        if not isinstance(rows, list):
+            raise ValueError("dependencies must be a list")
+    except (OSError, ValueError, KeyError, AttributeError) as exc:
+        errors.append(f"local wheel provenance is missing or invalid: {exc}")
+        return
+    for requirement in local:
+        name, version = requirement["name"], str(requirement["version"])
+        matches = [
+            row
+            for row in rows
+            if isinstance(row, dict) and row.get("name") == name and row.get("version") == version
+        ]
+        if len(matches) != 1:
+            errors.append(f"local wheel {name}=={version} needs one provenance entry")
+            continue
+        row = matches[0]
+        public = version.split("+", 1)[0]
+        if row.get("upstream_name") != name or row.get("upstream_version") != public:
+            errors.append(f"local wheel {name} provenance changes the upstream identity")
+        upstream = urlsplit(str(row.get("upstream_url", "")))
+        expected = f"{str(name).replace('-', '_')}-{public}-"
+        if (
+            upstream.scheme != "https"
+            or upstream.netloc != "files.pythonhosted.org"
+            or not Path(upstream.path).name.startswith(expected)
+            or not re.fullmatch(r"[0-9a-f]{64}", str(row.get("upstream_sha256", "")))
+        ):
+            errors.append(f"local wheel {name} provenance needs an official hashed PyPI wheel")
+        for field, folder, digest_field in (
+            ("patches", BUNDLE_ROOT, "patch_sha256"),
+            ("wheel_filename", BUNDLE_ROOT / "wheels", "wheel_sha256"),
+        ):
+            path = (folder / str(row.get(field, ""))).resolve()
+            if not path.is_relative_to(folder.resolve()) or not path.is_file():
+                errors.append(f"local wheel {name} provenance {field} is missing or outside bundle")
+                continue
+            digest = _sha256(path)
+            if digest != row.get(digest_field):
+                errors.append(f"local wheel {name} provenance {digest_field} mismatch")
+            if field == "wheel_filename":
+                if not path.name.startswith(f"{str(name).replace('-', '_')}-{version}-"):
+                    errors.append(f"local wheel {name} provenance names a different wheel")
+                if "sha256:" + digest not in requirement.get("hashes", []):
+                    errors.append(f"local wheel {name} provenance is not locked by the manifest")
 
 
 def _sha256(path: Path) -> str:

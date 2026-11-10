@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "dependencies": [
+    {
+      "name": "aiobotocore",
+      "version": "3.10.0+flowsteward.1",
+      "upstream_name": "aiobotocore",
+      "upstream_version": "3.10.0",
+      "upstream_url": "https://files.pythonhosted.org/packages/7f/bc/3bb8965204ba51bbf4d021bc89d1357cd2179a17ef71b5fc429e21b511a2/aiobotocore-3.10.0-py3-none-any.whl",
+      "upstream_sha256": "de0ccbcb82b6b0009f1b6667f48442e9d0432f9b8bfe6172fa51777cbea89d03",
+      "source_repository": "https://github.com/aio-libs/aiobotocore",
+      "patches": "patches/aiobotocore-compatibility.json",
+      "patch_sha256": "f4643c53bc86e0b593e198f961aa0f22ad9066061415521268dcc9033cabf463",
+      "wheel_filename": "aiobotocore-3.10.0+flowsteward.1-py3-none-any.whl",
+      "wheel_sha256": "eef15bcdbf9b8d7a184bfcb1a303db2054ad93f949308f717f135339b989048f"
+    },
+    {
+      "name": "botocore",
+      "version": "1.43.127+flowsteward.1",
+      "upstream_name": "botocore",
+      "upstream_version": "1.43.127",
+      "upstream_url": "https://files.pythonhosted.org/packages/4b/db/bee0401fd3f8cf1e2404044a4e3156dc7e064c2b1fc7162df2d795941cd8/botocore-1.43.127-py3-none-any.whl",
+      "upstream_sha256": "aa0e3188679a2164a2098a14ea9b59520520cb573aaee9999d852480691e134a",
+      "source_repository": "https://github.com/boto/botocore",
+      "patches": "patches/botocore-compatibility.json",
+      "patch_sha256": "bd17db2646a607aada82ce605b5c78058447477da698acaa2196cf071a9193fc",
+      "wheel_filename": "botocore-1.43.127+flowsteward.1-py3-none-any.whl",
+      "wheel_sha256": "dd00dc2a50afb343c08c78077c3c209048d3ea171f43c98aafa62381d8bfead7"
+    }
+  ]
+}

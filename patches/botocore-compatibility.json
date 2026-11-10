@@ -1,0 +1,26 @@
+[
+  {
+    "path": "botocore/__init__.py",
+    "sha256": "b4a63534c17cba7fec65c4bf144397eb517eeafb63fc94d375ce21055fff7ee2",
+    "replacements": [
+      [
+        "__version__ = '1.43.127'",
+        "__version__ = '1.43.127+flowsteward.1'"
+      ]
+    ]
+  },
+  {
+    "path": "botocore-1.43.127.dist-info/METADATA",
+    "sha256": "9838601ac2d7bf946233c4f9f8dc57f893df96cada634d6e7207d7321f414b05",
+    "replacements": [
+      [
+        "Version: 1.43.127\n",
+        "Version: 1.43.127+flowsteward.1\n"
+      ],
+      [
+        "Requires-Dist: python-dateutil (<3.0.0,>=2.1)",
+        "Requires-Dist: python-dateutil==4.0.0"
+      ]
+    ]
+  }
+]

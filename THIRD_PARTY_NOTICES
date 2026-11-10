@@ -1,12 +1,14 @@
 File Transfer (flowsteward.file-transfer) third-party notices
 
-The extension package bundles the Python wheels below, unmodified, as published on PyPI.
+The extension package bundles official PyPI wheels except the two explicitly identified
+Flow Steward compatibility forks below. Their exact upstream hashes, patches and rebuilt
+wheel hashes are recorded in dependency-sources.json. See docs/aws-compatibility.md.
 Each package's own license files are in licenses/<name>-<version>/.
 
-aiobotocore 3.10.0
+aiobotocore 3.10.0+flowsteward.1 (based on official 3.10.0)
   License: Apache-2.0
   Source: https://github.com/aio-libs/aiobotocore
-  Files: aiobotocore-3.10.0/LICENSE
+  Files: aiobotocore-3.10.0+flowsteward.1/LICENSE
 
 aiohappyeyeballs 2.7.1
   License: PSF-2.0
@@ -36,10 +38,10 @@ bcrypt 5.0.0
   Source: https://github.com/pyca/bcrypt/
   Files: bcrypt-5.0.0/LICENSE
 
-botocore 1.43.117
+botocore 1.43.127+flowsteward.1 (based on official 1.43.127)
   License: Apache-2.0
   Source: https://github.com/boto/botocore
-  Files: botocore-1.43.117/LICENSE.txt, botocore-1.43.117/NOTICE
+  Files: botocore-1.43.127+flowsteward.1/LICENSE.txt, botocore-1.43.127+flowsteward.1/NOTICE
 
 cffi 2.1.1
   License: MIT-0
@@ -96,15 +98,15 @@ PyNaCl 1.6.2
   Source: https://github.com/pyca/pynacl/
   Files: pynacl-1.6.2/LICENSE, pynacl-1.6.2/LICENSE.libsodium.txt
 
-python-dateutil 2.9.0.post0
+python-dateutil 4.0.0
   License: Apache-2.0 AND BSD-3-Clause (dual license, see license files)
   Source: https://github.com/dateutil/dateutil
-  Files: python_dateutil-2.9.0.post0/LICENSE
+  Files: python_dateutil-4.0.0/LICENSE
 
-six 1.17.0
-  License: MIT
-  Source: https://github.com/benjaminp/six
-  Files: six-1.17.0/LICENSE
+tzdata 2026.6
+  License: Apache-2.0 (code); public domain (IANA data)
+  Source: https://github.com/python/tzdata
+  Files: tzdata-2026.6/LICENSE, tzdata-2026.6/LICENSE_APACHE
 
 typing_extensions 4.16.0
   License: PSF-2.0
