@@ -1,4 +1,3 @@
---find-links dev-wheels
 ./dev-wheels/flowsteward_extension_sdk-0.4.0-py3-none-any.whl
 -r requirements.in
 ./dev-wheels/pytest-9.2.0-py3-none-any.whl

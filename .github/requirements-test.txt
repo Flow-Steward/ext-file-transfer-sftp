@@ -1,5 +1,3 @@
---no-index
---find-links wheels
 # Installed by CI for the tests; the runtime installs python_requirements itself.
 # Same pins as extension.yaml python_requirements.
 aiobotocore==3.10.0+flowsteward.1

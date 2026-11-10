@@ -1,5 +1,3 @@
---no-index
---find-links wheels
 # SFTP: compatible pinned Paramiko runtime closure.
 paramiko==5.1.0
 bcrypt==5.0.0

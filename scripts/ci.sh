@@ -42,7 +42,7 @@ check_local_requirement_files() {
 check_local_requirement_files requirements-dev.txt
 
 "${PYTHON_BIN}" -m pip install --upgrade pip
-"${PYTHON_BIN}" -m pip install -r requirements-dev.txt
+"${PYTHON_BIN}" -m pip install --no-index --find-links wheels --find-links dev-wheels -r requirements-dev.txt
 
 "${PYTHON_BIN}" scripts/validate_bundle.py
 "${PYTHON_BIN}" -m compileall -q file_transfer_extension.py file_operations.py file_connections.py file_errors.py connection_factory.py connections health.py main.py tests scripts .github/scripts/verify_distribution.py
