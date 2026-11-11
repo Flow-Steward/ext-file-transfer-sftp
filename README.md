@@ -1,9 +1,10 @@
 # File Transfer Extension
 
-`flowsteward.file-transfer` streams opaque files between Flow Steward artifacts
-and four kinds of storage: FTP and explicit FTPS, SFTP, S3-compatible object
-storage, and Dropbox. HTTP and HTTPS downloads stay in the built-in
-`http_request` step.
+File Transfer connects Flow Steward workflows to FTP, explicit FTPS, SFTP, S3-compatible object storage and Dropbox. List files in a directory, download a selected file for the next workflow step, or upload a file produced earlier in the run. Select downloads by exact name or filename pattern, with options to choose by filename or modification time. Transfer results include file size and checksum information.
+
+Collect supplier feeds, retrieve invoice PDFs for document extraction, bring exported spreadsheets into tabular processing or publish generated reports to a partner's storage. The same three workflow operations work across the supported storage connections, letting you reuse a familiar approach as destinations change. Files are passed between steps as workflow artifacts; parsing and conversion can be added through other steps.
+
+Configure each project connection with its remote root and credentials. SFTP setup includes confirming the server fingerprint; Dropbox uses your own app and account authorization. Listings cover one directory with up to 500 entries, and transfers default to a 200 MiB ceiling. Uploads preserve existing files unless you explicitly choose to replace them.
 
 Every connection offers the same three workflow operations:
 
