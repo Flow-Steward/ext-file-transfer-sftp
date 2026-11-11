@@ -5,7 +5,7 @@
 
 Fetches scripts/build_index.py from github.com/Flow-Steward/extensions and runs
 its inspect_archive on every archive, so a release the catalog would refuse
-fails here, before it is published.
+fails here, before it is published. A failed catalog download blocks publication.
 
 The checker runs as code in this job, so it is fetched at a pinned commit and
 must match a recorded SHA-256: a change to the catalog's main branch cannot run
@@ -59,7 +59,9 @@ def _fetch(path: str) -> bytes:
     with urllib.request.urlopen(f"{CATALOG}/{path}", timeout=60) as response:
         data = response.read()
     if hashlib.sha256(data).hexdigest() != CATALOG_DIGESTS[path]:
-        raise CatalogDigestMismatch(f"{path} at {CATALOG_REVISION} does not match its pinned SHA-256")
+        raise CatalogDigestMismatch(
+            f"{path} at {CATALOG_REVISION} does not match its pinned SHA-256"
+        )
     return data
 
 
@@ -71,10 +73,8 @@ def main(paths: list[str]) -> int:
         print(f"::error::{exc}", file=sys.stderr)
         return 1
     except OSError as exc:
-        print(
-            f"::warning::catalog checker unavailable ({exc}); archives were not checked against it"
-        )
-        return 0
+        print(f"::error::catalog checker unavailable ({exc}); archives were not checked against it")
+        return 1
     with tempfile.TemporaryDirectory() as tmp:
         script = Path(tmp) / "build_index.py"
         script.write_bytes(source)
