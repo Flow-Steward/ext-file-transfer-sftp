@@ -11,7 +11,7 @@ description: |-
 
   Collect supplier feeds, retrieve invoice PDFs for document extraction, bring exported spreadsheets into tabular processing or publish generated reports to a partner's storage. The same three workflow operations work across the supported storage connections, letting you reuse a familiar approach as destinations change. Files are passed between steps as workflow artifacts; parsing and conversion can be added through other steps.
 
-  Configure each project connection with its remote root and credentials. SFTP setup includes confirming the server fingerprint; Dropbox uses your own app and account authorization. Listings cover one directory with up to 500 entries, and transfers default to a 200 MiB ceiling. Uploads preserve existing files unless you explicitly choose to replace them.
+  Configure each project connection with its remote root and credentials. FTP, FTPS, SFTP and S3 endpoints must be publicly reachable over the Internet; private-network destinations are not supported in production. SFTP setup includes confirming the server fingerprint; Dropbox uses your own app and account authorization. Listings cover one directory with up to 500 entries, and transfers default to a 200 MiB ceiling. Uploads preserve existing files unless you explicitly choose to replace them.
 vendor:
   name: Flow Steward
   support_url: https://github.com/Flow-Steward/ext-file-transfer-sftp/issues
@@ -28,7 +28,7 @@ listing:
   summary: |-
     List, download and upload workflow files through FTP, FTPS, SFTP, S3-compatible storage and Dropbox.
   setup_summary: |-
-    Create a project connection for FTP/FTPS, SFTP or an S3 endpoint, with its root and credentials; verify the SFTP fingerprint with the server owner. For Dropbox, configure a scoped app with file metadata/read/write permissions, register the displayed redirect URI, then authorize the account.
+    Create a project connection to a publicly reachable Internet FTP/FTPS, SFTP or S3 endpoint, with its root and credentials; verify the SFTP fingerprint with the server owner. For Dropbox, configure a scoped app with file metadata/read/write permissions, register the displayed redirect URI, then authorize the account.
 features:
 - tool
 - action

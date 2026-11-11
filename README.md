@@ -4,7 +4,7 @@ File Transfer connects Flow Steward workflows to FTP, explicit FTPS, SFTP, S3-co
 
 Collect supplier feeds, retrieve invoice PDFs for document extraction, bring exported spreadsheets into tabular processing or publish generated reports to a partner's storage. The same three workflow operations work across the supported storage connections, letting you reuse a familiar approach as destinations change. Files are passed between steps as workflow artifacts; parsing and conversion can be added through other steps.
 
-Configure each project connection with its remote root and credentials. SFTP setup includes confirming the server fingerprint; Dropbox uses your own app and account authorization. Listings cover one directory with up to 500 entries, and transfers default to a 200 MiB ceiling. Uploads preserve existing files unless you explicitly choose to replace them.
+Configure each project connection with its remote root and credentials. FTP, FTPS, SFTP and S3 endpoints must be publicly reachable over the Internet; private-network destinations are not supported in production. SFTP setup includes confirming the server fingerprint; Dropbox uses your own app and account authorization. Listings cover one directory with up to 500 entries, and transfers default to a 200 MiB ceiling. Uploads preserve existing files unless you explicitly choose to replace them.
 
 Every connection offers the same three workflow operations:
 
