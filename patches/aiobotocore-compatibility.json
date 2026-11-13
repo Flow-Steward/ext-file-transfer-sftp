@@ -5,7 +5,7 @@
     "replacements": [
       [
         "__version__ = '3.10.0'",
-        "__version__ = '3.10.0+flowsteward.1'"
+        "__version__ = '3.10.0+flowsteward.2'"
       ]
     ]
   },
@@ -25,15 +25,29 @@
     "replacements": [
       [
         "Version: 3.10.0\n",
-        "Version: 3.10.0+flowsteward.1\n"
+        "Version: 3.10.0+flowsteward.2\n"
       ],
       [
         "Requires-Dist: botocore<1.43.118,>=1.43.115",
-        "Requires-Dist: botocore==1.43.127+flowsteward.1"
+        "Requires-Dist: botocore==1.44.2+flowsteward.1"
       ],
       [
         "Requires-Dist: python-dateutil<3.0.0,>=2.1",
         "Requires-Dist: python-dateutil==4.0.0"
+      ]
+    ]
+  },
+  {
+    "path": "aiobotocore/retries/standard.py",
+    "sha256": "2e608f915cc743ae7c2482bd10bad1f9540e945e261f2993c87f9ffc6b3267dc",
+    "replacements": [
+      [
+        "    ThrottlingErrorDetector,\n",
+        "    ThrottlingErrorDetector,\n    ThrottlingStatusCodeChecker,\n"
+      ],
+      [
+        "                ThrottledRetryableChecker(),\n",
+        "                ThrottledRetryableChecker(),\n                ThrottlingStatusCodeChecker(),\n"
       ]
     ]
   }

@@ -11,7 +11,7 @@ import pytest
 from aiobotocore.config import AioConfig
 from botocore.credentials import _parse_if_needed
 from botocore.utils import parse_timestamp
-from dateutil.parser import isoparse  # type: ignore[import-untyped]
+from dateutil.parser import isoparse
 
 from connections.s3 import _isolated_session
 
@@ -75,3 +75,66 @@ def test_credential_expiry_parser_retains_explicit_utc_offset():
 def test_dateutil_rejects_malformed_iso_numeric_fields(value):
     with pytest.raises(ValueError):
         isoparse(value)
+
+
+@pytest.mark.parametrize(
+    ("status", "error_code", "attempt", "expected"),
+    [
+        (429, None, 1, True),
+        (429, "UnmodeledThrottle", 1, True),
+        (429, "NoSuchKey", 1, False),
+        (429, None, 3, False),
+        (403, "AccessDenied", 1, False),
+        (503, "SlowDown", 1, True),
+    ],
+)
+def test_async_retry_policy_handles_unmodeled_429_and_respects_model_and_budget(
+    status, error_code, attempt, expected
+):
+    """The copied async checker must retain botocore 1.44.2's throttling fix."""
+    from aiobotocore.retries.standard import AioStandardRetryConditions
+    from botocore.awsrequest import AWSResponse
+    from botocore.retries.standard import RetryContext
+
+    model = _isolated_session().get_service_model("s3")
+    # AioSession's model load is asynchronous, but the resulting operation model is real.
+    operation = asyncio.run(model).operation_model("GetObject")
+    response = {} if error_code is None else {"Error": {"Code": error_code}}
+    context = RetryContext(
+        attempt,
+        operation_model=operation,
+        parsed_response=response,
+        http_response=AWSResponse("https://s3.test/data/key", status, {}, None),
+    )
+    assert asyncio.run(AioStandardRetryConditions(max_attempts=3).is_retryable(context)) is expected
+
+
+def test_installed_runtime_graph_matches_manifest_and_satisfies_peer_requirements():
+    """Catch stale wheels, mismatched runtime identities and incompatible peer pins."""
+    import importlib
+    from importlib.metadata import distribution, version
+    from pathlib import Path
+
+    import yaml
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+    from packaging.version import Version
+
+    root = Path(__file__).resolve().parents[1]
+    manifest = yaml.safe_load((root / "extension.yaml").read_text())
+    locked: dict[str, str] = {
+        canonicalize_name(row["name"]): str(row["version"])
+        for row in manifest["python_requirements"]
+    }
+    assert Version(Version(locked["botocore"]).public) >= Version("1.44.2")
+    for name, pinned in locked.items():
+        assert version(name) == pinned
+        for declaration in distribution(name).requires or []:
+            requirement = Requirement(declaration)
+            if requirement.marker is not None and not requirement.marker.evaluate():
+                continue
+            peer = canonicalize_name(requirement.name)
+            assert peer in locked, (name, declaration)
+            assert requirement.specifier.contains(locked[peer]), (name, declaration, locked[peer])
+    for name in ("aiobotocore", "botocore"):
+        assert importlib.import_module(name).__version__ == locked[name]

@@ -1,5 +1,9 @@
 # File Transfer Extension
 
+Current release: **0.3.6**. Bundles botocore `1.44.2+flowsteward.1` and
+aiobotocore `3.10.0+flowsteward.2`; see [release notes](docs/releases/0.3.6.md) and
+[AWS compatibility and provenance](docs/aws-compatibility.md).
+
 File Transfer connects Flow Steward workflows to FTP, explicit FTPS, SFTP, S3-compatible object storage and Dropbox. List files in a directory, download a selected file for the next workflow step, or upload a file produced earlier in the run. Select downloads by exact name or filename pattern, with options to choose by filename or modification time. Transfer results include file size and checksum information.
 
 Collect supplier feeds, retrieve invoice PDFs for document extraction, bring exported spreadsheets into tabular processing or publish generated reports to a partner's storage. The same three workflow operations work across the supported storage connections, letting you reuse a familiar approach as destinations change. Files are passed between steps as workflow artifacts; parsing and conversion can be added through other steps.

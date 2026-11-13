@@ -5,10 +5,10 @@ Flow Steward compatibility forks below. Their exact upstream hashes, patches and
 wheel hashes are recorded in dependency-sources.json. See docs/aws-compatibility.md.
 Each package's own license files are in licenses/<name>-<version>/.
 
-aiobotocore 3.10.0+flowsteward.1 (based on official 3.10.0)
+aiobotocore 3.10.0+flowsteward.2 (based on official 3.10.0)
   License: Apache-2.0
   Source: https://github.com/aio-libs/aiobotocore
-  Files: aiobotocore-3.10.0+flowsteward.1/LICENSE
+  Files: aiobotocore-3.10.0+flowsteward.2/LICENSE
 
 aiohappyeyeballs 2.7.1
   License: PSF-2.0
@@ -38,10 +38,10 @@ bcrypt 5.0.0
   Source: https://github.com/pyca/bcrypt/
   Files: bcrypt-5.0.0/LICENSE
 
-botocore 1.43.127+flowsteward.1 (based on official 1.43.127)
+botocore 1.44.2+flowsteward.1 (based on official 1.44.2)
   License: Apache-2.0
   Source: https://github.com/boto/botocore
-  Files: botocore-1.43.127+flowsteward.1/LICENSE.txt, botocore-1.43.127+flowsteward.1/NOTICE
+  Files: botocore-1.44.2+flowsteward.1/LICENSE.txt, botocore-1.44.2+flowsteward.1/NOTICE
 
 cffi 2.1.1
   License: MIT-0
