@@ -10,11 +10,14 @@ forms:
       - name: name_glob
         widget_type: text
         label: Filename glob
+        help_text: "Optional filename pattern such as *.csv. With a download, path becomes the directory in which to match files."
+        placeholder: "*.csv"
       - name: limit
         widget_type: number
         label: Limit
+        help_text: "Maximum number of results to return in this page."
   - operation_id: fetch_file
-    title: Fetch remote file
+    title: "Download remote file"
     fields:
       - name: path
         widget_type: text
@@ -29,6 +32,7 @@ forms:
         help_text: >-
           Optional. When set, Path is treated as a directory and the glob selects
           the file inside it.
+        placeholder: "*.csv"
       - name: select
         widget_type: select
         label: Selection
@@ -39,23 +43,30 @@ forms:
             value: latest_modified
           - label: Latest name
             value: latest_name
+        help_text: "Choose only to require one match, latest_modified for the newest modification time, or latest_name for the last filename in sort order."
       - name: max_bytes
         widget_type: number
         label: Max bytes
+        help_text: "Maximum allowed file size in bytes. Leave empty to use the host's configured artifact limit; oversized files fail."
   - operation_id: upload_file
-    title: Upload artifact
+    title: "Upload file to remote storage"
     fields:
       - name: artifact_handle
         widget_type: artifact_picker
         label: Artifact
         required: true
+        help_text: "Map the file artifact handle returned by an earlier download or file-generation step. The file must be available to this workflow run."
       - name: remote_path
         widget_type: text
         label: Remote path
         required: true
+        help_text: "Destination filename and any directory relative to the configured connection root."
+        placeholder: "reports/daily.pdf"
       - name: overwrite
         widget_type: boolean
         label: Overwrite
+        help_text: "Enable to replace a file already at the destination. Leave disabled to reject an existing file."
       - name: max_bytes
         widget_type: number
         label: Max bytes
+        help_text: "Maximum allowed file size in bytes. Leave empty to use the host's configured artifact limit; oversized files fail."

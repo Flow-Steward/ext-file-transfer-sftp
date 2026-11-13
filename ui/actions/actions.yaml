@@ -1,7 +1,7 @@
 actions:
   - action_id: discover_host_key
-    title: Discover SFTP Host Key
-    description: Fetch the SFTP server host-key fingerprint before saving a connection.
+    title: "Discover SFTP host key"
+    description: "Fetch the SFTP server host-key fingerprint before saving a connection. Select an SFTP connection with the server host and port configured; compare the discovered fingerprint with a trusted server administrator before saving it. Example: Inspect the SFTP fingerprint during setup and compare it with the server administrator's value."
     required_scopes:
       - extension:invoke
     handler:
@@ -12,6 +12,7 @@ actions:
       - name: connection_ref
         type: connection_ref
         required: true
+        description: "Select the saved project connection for this operation. Credentials belong in the connection, not in the step input."
     result_fields:
       - host_key_fingerprint
       - host_key_type
@@ -28,8 +29,8 @@ actions:
       - provider_unavailable
       - timeout
   - action_id: test_connection
-    title: Test File Transfer Connection
-    description: Validate that the selected connection can be reached and its configured root can be read.
+    title: "Test file storage connection"
+    description: "Validate that the selected connection is reachable and its configured root can be read. Create and select a File Transfer project connection for FTP, FTPS, SFTP, S3-compatible storage or Dropbox; configure its root and credentials. For SFTP, verify and save the host-key fingerprint. Example: Check the configured storage root before scheduling a supplier feed import."
     required_scopes:
       - extension:invoke
     handler:
@@ -40,6 +41,7 @@ actions:
       - name: connection_ref
         type: connection_ref
         required: true
+        description: "Select the saved project connection for this operation. Credentials belong in the connection, not in the step input."
     result_fields:
       - ok
       - protocol
@@ -63,8 +65,8 @@ actions:
       - provider_unavailable
       - timeout
   - action_id: list_files
-    title: List Files
-    description: List the regular files of one directory, bounded to 500 raw entries, without downloading file bodies.
+    title: "List remote files"
+    description: "List the regular files of one directory, bounded to 500 raw entries, without reading file bodies. Create and select a File Transfer project connection for FTP, FTPS, SFTP, S3-compatible storage or Dropbox; configure its root and credentials. For SFTP, verify and save the host-key fingerprint. Example: List .csv filenames under incoming using name_glob=*.csv before importing a feed."
     required_scopes:
       - extension:invoke
     handler:
@@ -75,15 +77,18 @@ actions:
       - name: connection_ref
         type: connection_ref
         required: true
+        description: "Select the saved project connection for this operation. Credentials belong in the connection, not in the step input."
       - name: path
         type: string
         required: true
       - name: name_glob
         type: string
         required: false
+        description: "Optional filename pattern such as *.csv. With a download, path becomes the directory in which to match files."
       - name: limit
         type: integer
         required: false
+        description: "Maximum number of results to return in this page."
     result_fields:
       - files
       - truncated
@@ -109,8 +114,8 @@ actions:
       - provider_unavailable
       - timeout
   - action_id: fetch_file
-    title: Fetch File
-    description: Stream one selected remote file into a host-created artifact.
+    title: "Download remote file"
+    description: "Download one remote file selected by path or filename pattern into a workflow artifact. Returns the downloaded file metadata and checksum. Create and select a File Transfer project connection for FTP, FTPS, SFTP, S3-compatible storage or Dropbox; configure its root and credentials. For SFTP, verify and save the host-key fingerprint. Example: Download the newest matching *.csv file from incoming with select=latest_modified, then pass the artifact to tabular processing."
     required_scopes:
       - extension:invoke
       - artifact:read
@@ -122,18 +127,22 @@ actions:
       - name: connection_ref
         type: connection_ref
         required: true
+        description: "Select the saved project connection for this operation. Credentials belong in the connection, not in the step input."
       - name: path
         type: string
         required: true
       - name: name_glob
         type: string
         required: false
+        description: "Optional filename pattern such as *.csv. With a download, path becomes the directory in which to match files."
       - name: select
         type: string
         required: false
+        description: "Choose only to require one match, latest_modified for the newest modification time, or latest_name for the last filename in sort order."
       - name: max_bytes
         type: integer
         required: false
+        description: "Maximum allowed file size in bytes. Leave empty to use the host's configured artifact limit; oversized files fail."
     result_fields:
       - artifact_handle
       - artifact_filename
@@ -167,8 +176,8 @@ actions:
       - provider_unavailable
       - timeout
   - action_id: upload_file
-    title: Upload File
-    description: Stream one host artifact to a remote path; an existing file is replaced only with overwrite.
+    title: "Upload file to remote storage"
+    description: "Upload one workflow file artifact to a remote path; replace an existing file only when overwrite is enabled. Create and select a File Transfer project connection for FTP, FTPS, SFTP, S3-compatible storage or Dropbox; configure its root and credentials. For SFTP, verify and save the host-key fingerprint. Example: Upload a generated report artifact to reports/daily.pdf, enabling overwrite only when replacement is intended."
     required_scopes:
       - extension:invoke
       - artifact:read
@@ -180,18 +189,23 @@ actions:
       - name: artifact_handle
         type: artifact_handle
         required: true
+        description: "Map the file artifact handle returned by an earlier download or file-generation step. The file must be available to this workflow run."
       - name: connection_ref
         type: connection_ref
         required: true
+        description: "Select the saved project connection for this operation. Credentials belong in the connection, not in the step input."
       - name: remote_path
         type: string
         required: true
+        description: "Destination filename and any directory relative to the configured connection root."
       - name: overwrite
         type: boolean
         required: false
+        description: "Enable to replace a file already at the destination. Leave disabled to reject an existing file."
       - name: max_bytes
         type: integer
         required: false
+        description: "Maximum allowed file size in bytes. Leave empty to use the host's configured artifact limit; oversized files fail."
     result_fields:
       - uploaded
       - remote_path

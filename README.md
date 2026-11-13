@@ -185,3 +185,7 @@ update that wheel when the public SDK contract changes.
 
 The maintained AWS dependency graph and exact fork provenance are documented in
 [docs/aws-compatibility.md](docs/aws-compatibility.md) and `dependency-sources.json`.
+
+## Workflow action guide
+
+See [Workflow actions](docs/workflow-actions.md) for connection setup, input formats, results and practical examples.
