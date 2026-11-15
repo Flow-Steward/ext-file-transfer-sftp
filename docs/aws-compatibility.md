@@ -1,6 +1,6 @@
 # Maintained AWS compatibility graph
 
-File Transfer 0.3.6 ships `botocore 1.44.2+flowsteward.1`,
+File Transfer 0.3.7 ships `botocore 1.44.2+flowsteward.1`,
 `aiobotocore 3.10.0+flowsteward.2`, official `python-dateutil 4.0.0` and
 `tzdata 2026.6`. The two local versions identify Flow Steward's maintained
 compatibility forks. They are not upstream releases or an upstream support claim.

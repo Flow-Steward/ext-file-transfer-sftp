@@ -1,0 +1,27 @@
+page_id: support
+title: Support
+description: Where to report a problem, ask a question or request a feature.
+project_scoped: false
+components:
+  - component_id: support_contact
+    type: markdown
+    title: Contact the developers
+    body: |
+      This extension is maintained in a public GitHub repository. Use it to report a problem, ask a question or request a feature; the developers answer there.
+
+      - [Report a problem or request a feature](https://github.com/Flow-Steward/ext-file-transfer-sftp/issues/new/choose)
+      - [Browse existing issues](https://github.com/Flow-Steward/ext-file-transfer-sftp/issues)
+      - [Documentation and source code](https://github.com/Flow-Steward/ext-file-transfer-sftp)
+
+      Opening an issue needs a GitHub account. Check the existing issues first: someone may already have reported the same problem.
+  - component_id: support_report
+    type: markdown
+    title: What to include in a report
+    body: |
+      - The extension version and your Flow Steward version.
+      - What you did, what you expected and what happened instead, with the exact error message.
+      - The workflow, step or action involved, and when it happened.
+
+      If a developer asks for more detail, they will tell you what to collect. **Monitoring → Download diagnostics** exports a report you can review before sharing.
+
+      Issues are public. Never include passwords, API keys, tokens, connection strings or customer data.
