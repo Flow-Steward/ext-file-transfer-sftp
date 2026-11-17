@@ -126,7 +126,7 @@ def test_installed_runtime_graph_matches_manifest_and_satisfies_peer_requirement
         canonicalize_name(row["name"]): str(row["version"])
         for row in manifest["python_requirements"]
     }
-    assert Version(Version(locked["botocore"]).public) >= Version("1.44.3")
+    assert Version(Version(locked["botocore"]).public) >= Version("1.44.4")
     for name, pinned in locked.items():
         assert version(name) == pinned
         for declaration in distribution(name).requires or []:
