@@ -1,3 +1,11 @@
+# File Transfer 0.3.8
+
+- Updated the maintained botocore fork to `1.44.3+flowsteward.1` from the exact official 1.44.3 wheel, preserving the python-dateutil 4.0.0 pin.
+- Updated aiobotocore to `3.10.0+flowsteward.3` to pin that wheel, preserving the HTTP 429 retry checker and presigned POST condition-copy fix.
+- Refreshed wheel hashes, bound source patches and license records. CI reproduces both forks from hashed official wheels before running the existing offline dependency, S3 transport and extension tests and packaging both Linux targets.
+
+These are disclosed Flow Steward compatibility forks, not upstream support for this dependency graph. See [AWS compatibility and provenance](../aws-compatibility.md). Live authenticated S3/provider and ARM64 execution remain unverified.
+
 **0.3.1: logo fix.** The logo (`icon.png`) now has a transparent background; in 0.3.0 the Flow Steward wave sat on a black box on dark themes.
 
 **Needs a Flow Steward Core that speaks the final extension host contract.** 0.3.0 speaks `extension_host_v2` with its final execution scope (`group_id`, `for_each_id`, `step_id`, `step_execution_id`) and is built on `flowsteward-extension-sdk` 0.4.0. A request with another contract, a missing scope key, both a Group and a For each as its owner, or a step without its execution is refused (`invalid_host_envelope`) before any artifact is read or written and before any server is contacted. An older Core does not run this release.

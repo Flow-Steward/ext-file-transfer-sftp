@@ -1,20 +1,20 @@
 # Maintained AWS compatibility graph
 
-File Transfer 0.3.7 ships `botocore 1.44.2+flowsteward.1`,
-`aiobotocore 3.10.0+flowsteward.2`, official `python-dateutil 4.0.0` and
+File Transfer 0.3.8 ships `botocore 1.44.3+flowsteward.1`,
+`aiobotocore 3.10.0+flowsteward.3`, official `python-dateutil 4.0.0` and
 `tzdata 2026.6`. The two local versions identify Flow Steward's maintained
 compatibility forks. They are not upstream releases or an upstream support claim.
 
-Official PyPI metadata, checked on 2026-11-13, has no resolver-compatible graph
+Official PyPI metadata, checked on 2026-11-17, has no resolver-compatible graph
 containing all three latest public releases: aiobotocore 3.10.0 requires botocore
-`>=1.43.115,<1.43.118` and python-dateutil `<3`; botocore 1.44.2 also requires
+`>=1.43.115,<1.43.118` and python-dateutil `<3`; botocore 1.44.3 also requires
 python-dateutil `<3`. Both maintained forks therefore pin the exact tested
 python-dateutil version, and aiobotocore pins the exact maintained botocore wheel.
 Unmodified official wheels cannot install this graph.
 
 The botocore fork changes its distribution/runtime version and its dateutil pin.
 Its runtime implementation and service models are otherwise the official
-1.44.2 files. The aiobotocore fork changes its distribution/runtime version,
+1.44.3 files. The aiobotocore fork changes its distribution/runtime version,
 its two peer pins, adds the upstream HTTP 429 retry checker to its copied
 asynchronous retry-condition list, and copies a caller's presigned POST conditions before adding
 bucket/key conditions. That last change ports the actual botocore 1.43.127
@@ -35,7 +35,15 @@ botocore or already present behind its now-enabled compatibility flag. The
 extension explicitly sets standard mode with one SDK attempt, retaining its own
 bounded read retries and single commit attempt. Bearer auth and login-token
 providers remain outside its explicit-key-only S3 contract. The botocore service
-models are retained unmodified, including the new 1.44.2 models.
+models are retained unmodified, including the new 1.44.3 models.
+
+The 1.44.2-to-1.44.3 comparison finds one Python implementation change outside
+the version identity: RPC v2 CBOR serialization now derives Content-Type from
+the request event-stream shape independently of Accept. This extension uses
+S3 REST/XML, whose service model is unchanged. All new upstream service models
+and the serializer fix are retained verbatim. The aiobotocore .3 update only
+changes its version identity and exact botocore peer pin; its two code fixes
+are byte-identical to .2.
 
 Existing transport tests
 exercise real S3 client creation, the S3 service model, XML parsing, request
@@ -70,8 +78,8 @@ python scripts/rebuild_aws_wheels.py /path/to/official-wheels /path/to/output
 ```
 
 The script rejects upstream or patch hash mismatches and verifies the rebuilt
-wheel hashes. The release checks reproduce both wheel hashes from the official
-source wheels on macOS and Linux. Bundle validation rejects local versions
+wheel hashes. CI reproduces both wheel hashes from the official source wheels on Linux
+and compares them with the committed wheels. Bundle validation rejects local versions
 without matching same-package/public-version provenance, a hashed official PyPI
 source URL, existing bound patches and a manifest-locked local wheel.
 
@@ -85,7 +93,7 @@ or removal of these forks once upstream supports the required graph.
 
 Primary sources checked for this update:
 
-- [Botocore 1.44.2 official PyPI metadata](https://pypi.org/pypi/botocore/1.44.2/json)
+- [Botocore 1.44.3 official PyPI metadata](https://pypi.org/pypi/botocore/1.44.3/json)
 - [Aiobotocore 3.10.0 official PyPI metadata](https://pypi.org/pypi/aiobotocore/3.10.0/json)
-- [Botocore retry implementation at 1.44.2](https://github.com/boto/botocore/blob/1.44.2/botocore/retries/standard.py)
+- [Botocore retry implementation at 1.44.3](https://github.com/boto/botocore/blob/1.44.3/botocore/retries/standard.py)
 - [Aiobotocore retry implementation at 3.10.0](https://github.com/aio-libs/aiobotocore/blob/3.10.0/aiobotocore/retries/standard.py)

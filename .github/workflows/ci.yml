@@ -19,6 +19,30 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
+      - name: Reproduce maintained AWS wheels from official sources
+        run: |
+          python - <<'PYCODE'
+          import hashlib
+          import json
+          import subprocess
+          import sys
+          import tempfile
+          import urllib.request
+          from pathlib import Path
+
+          rows = json.loads(Path("dependency-sources.json").read_text())["dependencies"]
+          with tempfile.TemporaryDirectory() as directory:
+              source = Path(directory) / "source"
+              output = Path(directory) / "output"
+              source.mkdir()
+              for row in rows:
+                  data = urllib.request.urlopen(row["upstream_url"], timeout=60).read()
+                  assert hashlib.sha256(data).hexdigest() == row["upstream_sha256"]
+                  (source / row["upstream_url"].rsplit("/", 1)[-1]).write_bytes(data)
+              subprocess.run([sys.executable, "scripts/rebuild_aws_wheels.py", str(source), str(output)], check=True)
+              for row in rows:
+                  assert (output / row["wheel_filename"]).read_bytes() == (Path("wheels") / row["wheel_filename"]).read_bytes()
+          PYCODE
       - name: Test dependencies
         # The host provides flowsteward-extension-sdk at runtime; tests use the
         # wheel committed in dev-wheels/ until the SDK is published.
