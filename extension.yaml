@@ -189,7 +189,7 @@ python_requirements:
 - name: aiobotocore
   version: "3.10.0+flowsteward.5"
   hashes:
-  - sha256:2889cf37f58730c284d496e2cd45a4a6b084911574486c3cae9e68f25e07df85
+  - sha256:5b843bd56b04cf74b84fe3596bf4d162c371dc4f96ea05e9910ea2bfb6b24f86
 - name: aiohappyeyeballs
   version: 2.7.1
   hashes:
@@ -219,7 +219,7 @@ python_requirements:
 - name: botocore
   version: "1.44.7+flowsteward.1"
   hashes:
-  - sha256:ff38afd68c067ab83a2be4a7d11afb14ffe3ab2a88791ff6e3c953b86e708d18
+  - sha256:d5654448e148d58157ac9c657c60d2d1542476344f19a6166885bb7a47d839e8
 - name: cffi
   version: 2.1.1
   hashes:
