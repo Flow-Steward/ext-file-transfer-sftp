@@ -5,7 +5,7 @@
     "replacements": [
       [
         "__version__ = '3.10.0'",
-        "__version__ = '3.10.0+flowsteward.4'"
+        "__version__ = '3.10.0+flowsteward.5'"
       ]
     ]
   },
@@ -25,11 +25,11 @@
     "replacements": [
       [
         "Version: 3.10.0\n",
-        "Version: 3.10.0+flowsteward.4\n"
+        "Version: 3.10.0+flowsteward.5\n"
       ],
       [
         "Requires-Dist: botocore<1.43.118,>=1.43.115",
-        "Requires-Dist: botocore==1.44.4+flowsteward.1"
+        "Requires-Dist: botocore==1.44.7+flowsteward.1"
       ],
       [
         "Requires-Dist: python-dateutil<3.0.0,>=2.1",
