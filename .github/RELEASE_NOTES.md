@@ -1,12 +1,10 @@
-# File Transfer 0.3.9
+# File Transfer 0.3.10
 
-- Updated the maintained botocore fork to `1.44.4+flowsteward.1` from the exact official 1.44.4 wheel, preserving the python-dateutil 4.0.0 pin.
-- Updated aiobotocore to `3.10.0+flowsteward.4` to pin that wheel. The HTTP 429 retry checker and presigned POST condition-copy implementation patches remain byte-identical to .3.
-- Refreshed wheel hashes, bound source patches and license records. The official 1.44.3-to-1.44.4 comparison has no Python behavior changes beyond version identity, and S3 model content is unchanged. CI reproduces both forks from hashed official wheels before running the existing offline dependency, S3 transport and extension tests and packaging both Linux targets.
+- Updated the maintained botocore build to `1.44.7+flowsteward.1` from the official 1.44.7 wheel. The compatibility build pins python-dateutil 4.0.0.
+- Updated the maintained aiobotocore build to `3.10.0+flowsteward.5` to match botocore. This build carries the existing HTTP 429 and presigned POST fixes.
+- Recorded the official wheel, exact patches, resulting hashes, and bundled licenses.
 
-These are disclosed Flow Steward compatibility forks, not upstream support for this dependency graph. See [AWS compatibility and provenance](../aws-compatibility.md). Live authenticated S3/provider and ARM64 execution remain unverified.
-
-[Changes from 0.3.8](https://github.com/Flow-Steward/ext-file-transfer-sftp/compare/v0.3.8...v0.3.9)
+[Changes from 0.3.9](https://github.com/Flow-Steward/ext-file-transfer-sftp/compare/v0.3.9...v0.3.10)
 
 **0.3.1: logo fix.** The logo (`icon.png`) now has a transparent background; in 0.3.0 the Flow Steward wave sat on a black box on dark themes.
 

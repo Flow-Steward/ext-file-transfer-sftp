@@ -1,20 +1,20 @@
 # Maintained AWS compatibility graph
 
-File Transfer 0.3.9 ships `botocore 1.44.4+flowsteward.1`,
-`aiobotocore 3.10.0+flowsteward.4`, official `python-dateutil 4.0.0` and
+File Transfer 0.3.10 ships `botocore 1.44.7+flowsteward.1`,
+`aiobotocore 3.10.0+flowsteward.5`, official `python-dateutil 4.0.0` and
 `tzdata 2026.6`. The two local versions identify Flow Steward's maintained
 compatibility forks. They are not upstream releases or an upstream support claim.
 
-Official PyPI metadata, checked on 2026-11-17, has no resolver-compatible graph
+Official PyPI metadata, checked on 2026-11-21, has no resolver-compatible graph
 containing all three latest public releases: aiobotocore 3.10.0 requires botocore
-`>=1.43.115,<1.43.118` and python-dateutil `<3`; botocore 1.44.4 also requires
+`>=1.43.115,<1.43.118` and python-dateutil `<3`; botocore 1.44.7 also requires
 python-dateutil `<3`. Both maintained forks therefore pin the exact tested
 python-dateutil version, and aiobotocore pins the exact maintained botocore wheel.
 Unmodified official wheels cannot install this graph.
 
 The botocore fork changes its distribution/runtime version and its dateutil pin.
 Its runtime implementation and service models are otherwise the official
-1.44.4 files. The aiobotocore fork changes its distribution/runtime version,
+1.44.7 files. The aiobotocore fork changes its distribution/runtime version,
 its two peer pins, adds the upstream HTTP 429 retry checker to its copied
 asynchronous retry-condition list, and copies a caller's presigned POST conditions before adding
 bucket/key conditions. That last change ports the actual botocore 1.43.127
@@ -52,6 +52,13 @@ members are compared after decompression to distinguish model changes from
 compression metadata. The aiobotocore .4 update changes only its version identity
 and exact botocore peer pin; its presigned POST and HTTP 429 implementation
 patches are byte-identical to .3. The dateutil 4.0.0 compatibility pins remain.
+
+The official 1.44.4-to-1.44.7 comparison shows request-independent User-Agent
+caching, Kinesis retry classification, and service-model changes. The S3
+multipart create, upload-part and abort responses gain an optional version ID.
+The extension's S3 requests continue to use the same modeled inputs. The
+aiobotocore .5 build changes its version identity and exact botocore peer pin.
+The presigned POST and HTTP 429 implementation patches are identical to .4.
 
 Existing transport tests
 exercise real S3 client creation, the S3 service model, XML parsing, request
@@ -101,7 +108,7 @@ or removal of these forks once upstream supports the required graph.
 
 Primary sources checked for this update:
 
-- [Botocore 1.44.4 official PyPI metadata](https://pypi.org/pypi/botocore/1.44.4/json)
+- [Botocore 1.44.7 official PyPI metadata](https://pypi.org/pypi/botocore/1.44.7/json)
 - [Aiobotocore 3.10.0 official PyPI metadata](https://pypi.org/pypi/aiobotocore/3.10.0/json)
-- [Botocore retry implementation at 1.44.4](https://github.com/boto/botocore/blob/1.44.4/botocore/retries/standard.py)
+- [Botocore retry implementation at 1.44.7](https://github.com/boto/botocore/blob/1.44.7/botocore/retries/standard.py)
 - [Aiobotocore retry implementation at 3.10.0](https://github.com/aio-libs/aiobotocore/blob/3.10.0/aiobotocore/retries/standard.py)
