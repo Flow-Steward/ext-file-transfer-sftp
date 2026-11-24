@@ -4,7 +4,7 @@ lifecycle:
   data_migrations: []
 extension_id: flowsteward.file-transfer
 kind: tool_provider
-version: 0.3.10
+version: 0.3.11
 display_name: File Transfer
 description: |-
   File Transfer connects Flow Steward workflows to FTP, explicit FTPS, SFTP, S3-compatible object storage and Dropbox. List files in a directory, download a selected file for the next workflow step, or upload a file produced earlier in the run. Select downloads by exact name or filename pattern, with options to choose by filename or modification time. Transfer results include file size and checksum information.
@@ -187,9 +187,9 @@ callbacks:
 action_manifest: ui/actions/actions.yaml
 python_requirements:
 - name: aiobotocore
-  version: "3.10.0+flowsteward.5"
+  version: "3.10.0+flowsteward.6"
   hashes:
-  - sha256:5b843bd56b04cf74b84fe3596bf4d162c371dc4f96ea05e9910ea2bfb6b24f86
+  - sha256:29da61decbddf07c1d5530f197b5dba99e18d0f57dff95488e88adeb645d051b
 - name: aiohappyeyeballs
   version: 2.7.1
   hashes:
@@ -217,9 +217,9 @@ python_requirements:
   - sha256:7aeef54b60ceddb6f30ee3db090351ecf0d40ec6e2abf41430997407a46d2254
   - sha256:ddb4e1500f6efdd402218ffe34d040a1196c072e07929b9820f363a1fd1f4191
 - name: botocore
-  version: "1.44.7+flowsteward.1"
+  version: "1.44.9+flowsteward.1"
   hashes:
-  - sha256:d5654448e148d58157ac9c657c60d2d1542476344f19a6166885bb7a47d839e8
+  - sha256:f16450bb62a39628644f22c6f21689b2340d6dc442e6a0808d9df18894c8bbb4
 - name: cffi
   version: 2.1.1
   hashes:

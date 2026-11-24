@@ -1,21 +1,21 @@
 [
   {
     "path": "botocore/__init__.py",
-    "sha256": "cdcf81cf03161b1b1e9040f22dff8ba21bd2b7d4cf3bec2551203aaab25e0acf",
+    "sha256": "bc6f8b1ce1a676f6698c69cf45c66d7e31a8d9ce6366653f03a2afaa5dae797c",
     "replacements": [
       [
-        "__version__ = '1.44.7'",
-        "__version__ = '1.44.7+flowsteward.1'"
+        "__version__ = '1.44.9'",
+        "__version__ = '1.44.9+flowsteward.1'"
       ]
     ]
   },
   {
-    "path": "botocore-1.44.7.dist-info/METADATA",
-    "sha256": "0529e70ea5339c384f2e868f8a75b0a7345b89b2ae646d62e01b83e1e16b8153",
+    "path": "botocore-1.44.9.dist-info/METADATA",
+    "sha256": "90abbc3731d2f87d5ac2fcfdbe2219bb744773387719f48786071d53b9abd77f",
     "replacements": [
       [
-        "Version: 1.44.7\n",
-        "Version: 1.44.7+flowsteward.1\n"
+        "Version: 1.44.9\n",
+        "Version: 1.44.9+flowsteward.1\n"
       ],
       [
         "Requires-Dist: python-dateutil (<3.0.0,>=2.1)",

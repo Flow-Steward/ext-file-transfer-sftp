@@ -3,29 +3,29 @@
   "dependencies": [
     {
       "name": "aiobotocore",
-      "version": "3.10.0+flowsteward.5",
+      "version": "3.10.0+flowsteward.6",
       "upstream_name": "aiobotocore",
       "upstream_version": "3.10.0",
       "upstream_url": "https://files.pythonhosted.org/packages/7f/bc/3bb8965204ba51bbf4d021bc89d1357cd2179a17ef71b5fc429e21b511a2/aiobotocore-3.10.0-py3-none-any.whl",
       "upstream_sha256": "de0ccbcb82b6b0009f1b6667f48442e9d0432f9b8bfe6172fa51777cbea89d03",
       "source_repository": "https://github.com/aio-libs/aiobotocore",
       "patches": "patches/aiobotocore-compatibility.json",
-      "patch_sha256": "b53e89a78b675d3d3b146aa519cb259a30eb13fc1875eff337fc41964b49e7a1",
-      "wheel_filename": "aiobotocore-3.10.0+flowsteward.5-py3-none-any.whl",
-      "wheel_sha256": "5b843bd56b04cf74b84fe3596bf4d162c371dc4f96ea05e9910ea2bfb6b24f86"
+      "patch_sha256": "ff826d788c87292da17893fab1b5669a14352520ffea488f4e29c4109ee0bff9",
+      "wheel_filename": "aiobotocore-3.10.0+flowsteward.6-py3-none-any.whl",
+      "wheel_sha256": "29da61decbddf07c1d5530f197b5dba99e18d0f57dff95488e88adeb645d051b"
     },
     {
       "name": "botocore",
-      "version": "1.44.7+flowsteward.1",
+      "version": "1.44.9+flowsteward.1",
       "upstream_name": "botocore",
-      "upstream_version": "1.44.7",
-      "upstream_url": "https://files.pythonhosted.org/packages/0b/47/a6d5d012e4d6e70f80d4d0dffac7622f8f64edce635200ea23a3c531f397/botocore-1.44.7-py3-none-any.whl",
-      "upstream_sha256": "56ec7cf3a7c0012c7e105c8f498c67077afa722df916dbdbe667b584fe7e5f99",
+      "upstream_version": "1.44.9",
+      "upstream_url": "https://files.pythonhosted.org/packages/20/ad/f8143d7a78503c3b67d135589cd1da82d3867ed1f37149e64d6f9bef6cfb/botocore-1.44.9-py3-none-any.whl",
+      "upstream_sha256": "6966752d38514a8e457ea062ea171b2b320c55bad23c8ae4f74f88296e00890d",
       "source_repository": "https://github.com/boto/botocore",
       "patches": "patches/botocore-compatibility.json",
-      "patch_sha256": "90ed2d3d29d2a009198720f89be3df2677256efaf9d45e5beb7a539efa175090",
-      "wheel_filename": "botocore-1.44.7+flowsteward.1-py3-none-any.whl",
-      "wheel_sha256": "d5654448e148d58157ac9c657c60d2d1542476344f19a6166885bb7a47d839e8"
+      "patch_sha256": "94f08696d682d30924655bd7b43a14e0df1792dcfb3cf11d7dce983dccf7aa27",
+      "wheel_filename": "botocore-1.44.9+flowsteward.1-py3-none-any.whl",
+      "wheel_sha256": "f16450bb62a39628644f22c6f21689b2340d6dc442e6a0808d9df18894c8bbb4"
     }
   ]
 }
