@@ -1,20 +1,20 @@
 # Maintained AWS compatibility graph
 
-File Transfer 0.3.11 ships `botocore 1.44.9+flowsteward.1`,
-`aiobotocore 3.10.0+flowsteward.6`, official `python-dateutil 4.0.0` and
+File Transfer 0.3.12 ships `botocore 1.44.11+flowsteward.1`,
+`aiobotocore 3.10.0+flowsteward.7`, official `python-dateutil 4.0.0` and
 `tzdata 2026.6`. The two local versions identify Flow Steward's maintained
 compatibility forks. They are not upstream releases or an upstream support claim.
 
-Official PyPI metadata, checked on 2026-11-24, has no resolver-compatible graph
-containing all three latest public releases: aiobotocore 3.10.0 requires botocore
-`>=1.43.115,<1.43.118` and python-dateutil `<3`; botocore 1.44.9 also requires
+Official PyPI metadata, checked on 2026-11-26, has no resolver-compatible graph
+containing the three selected public versions: aiobotocore 3.10.0 requires botocore
+`>=1.43.115,<1.43.118` and python-dateutil `<3`; botocore 1.44.11 also requires
 python-dateutil `<3`. Both maintained forks therefore pin the exact tested
 python-dateutil version, and aiobotocore pins the exact maintained botocore wheel.
 Unmodified official wheels cannot install this graph.
 
 The botocore fork changes its distribution/runtime version and its dateutil pin.
 Its runtime implementation and service models are otherwise the official
-1.44.9 files. The aiobotocore fork changes its distribution/runtime version,
+1.44.11 files. The aiobotocore fork changes its distribution/runtime version,
 its two peer pins, adds the upstream HTTP 429 retry checker to its copied
 asynchronous retry-condition list, and copies a caller's presigned POST conditions before adding
 bucket/key conditions. That last change ports the actual botocore 1.43.127
@@ -65,10 +65,15 @@ change beyond the version identity. Decompressed S3 model content is unchanged.
 The aiobotocore .6 build updates its version and exact botocore pin while
 retaining the HTTP 429 and presigned POST patches.
 
-Existing transport tests
-exercise real S3 client creation, the S3 service model, XML parsing, request
-signing, TLS transport, pinned endpoints, conditional writes, multipart uploads,
-streaming reads, limits, cancellation, deadlines and explicit credentials.
+The official 1.44.9-to-1.44.11 wheel comparison finds no Python implementation
+change beyond the version identity. Decompressed S3 model content is unchanged.
+The aiobotocore .7 build updates its version and exact botocore pin and retains
+the HTTP 429 and presigned POST patches.
+
+Existing transport tests exercise real S3 client creation, the S3 service model,
+XML parsing, request signing, TLS transport, pinned endpoints, conditional writes,
+multipart uploads, streaming reads, limits, cancellation, deadlines and explicit
+credentials.
 
 The AWS files use dateutil's `parser.parse`, `tzutc` and `tzlocal` interfaces.
 Dateutil 4 retains these interfaces. Its major changes since 2.9 are Python 3.11
@@ -113,7 +118,7 @@ or removal of these forks once upstream supports the required graph.
 
 Primary sources checked for this update:
 
-- [Botocore 1.44.9 official PyPI metadata](https://pypi.org/pypi/botocore/1.44.9/json)
+- [Botocore 1.44.11 official PyPI metadata](https://pypi.org/pypi/botocore/1.44.11/json)
 - [Aiobotocore 3.10.0 official PyPI metadata](https://pypi.org/pypi/aiobotocore/3.10.0/json)
-- [Botocore retry implementation at 1.44.9](https://github.com/boto/botocore/blob/1.44.9/botocore/retries/standard.py)
+- [Botocore retry implementation at 1.44.11](https://github.com/boto/botocore/blob/1.44.11/botocore/retries/standard.py)
 - [Aiobotocore retry implementation at 3.10.0](https://github.com/aio-libs/aiobotocore/blob/3.10.0/aiobotocore/retries/standard.py)
